@@ -37,14 +37,16 @@ export default function ListingCard({
     <motion.div
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
+      onClick={!isMine && onBuy ? () => onBuy(listing) : undefined}
       className="relative rounded-xl overflow-hidden flex flex-col"
       style={{
         width: 160,
         height: 240,
         background: "#060606",
-        border: `1px solid ${hovered ? glowColor + "50" : "rgba(255,255,255,0.05)"}`,
-        boxShadow: hovered ? `0 0 20px ${glowColor}20` : "none",
+        border: `1px solid ${hovered && !isMine ? glowColor + "60" : "rgba(255,255,255,0.05)"}`,
+        boxShadow: hovered && !isMine ? `0 0 20px ${glowColor}20` : "none",
         transition: "border-color 0.2s, box-shadow 0.2s",
+        cursor: !isMine && onBuy ? "pointer" : "default",
       }}
     >
       {/* Image */}
@@ -137,14 +139,12 @@ export default function ListingCard({
           ) : (
             onBuy && (
               <button
-                onClick={() => onBuy(listing)}
-                className="w-full py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-150"
+                onClick={(e) => { e.stopPropagation(); onBuy(listing); }}
+                className="w-full py-2 rounded-lg text-[11px] font-bold transition-all duration-150"
                 style={{
-                  background: hovered
-                    ? "rgba(255,255,255,0.12)"
-                    : "rgba(255,255,255,0.07)",
-                  color: "#efefef",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: hovered ? "#efefef" : "rgba(239,239,239,0.12)",
+                  color: hovered ? "#000000" : "#efefef",
+                  border: "1px solid rgba(255,255,255,0.2)",
                   fontFamily: "var(--font-syne), Syne, sans-serif",
                 }}
               >
