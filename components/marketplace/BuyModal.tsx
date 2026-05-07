@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { CreditCard, X } from "lucide-react";
+import { CreditCard, X, CheckCircle, Package } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { Listing } from "@/types/database";
 import { RARITIES, getConditionLabel } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
@@ -23,7 +24,9 @@ interface BuyModalProps {
 export default function BuyModal({ listing, onClose, onSuccess }: BuyModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bought, setBought] = useState(false);
   const { profile, refetch } = useProfile();
+  const router = useRouter();
 
   async function handleBuy() {
     if (!listing) return;
@@ -39,12 +42,17 @@ export default function BuyModal({ listing, onClose, onSuccess }: BuyModalProps)
       if (!res.ok) throw new Error(data.error ?? "Error al comprar.");
       await refetch();
       onSuccess();
-      onClose();
+      setBought(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleClose() {
+    setBought(false);
+    onClose();
   }
 
   const item = listing?.inventory?.item;
@@ -63,7 +71,7 @@ export default function BuyModal({ listing, onClose, onSuccess }: BuyModalProps)
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleClose}
             className="fixed inset-0 z-40"
             style={{ background: "rgba(0,0,0,0.8)" }}
           />
@@ -76,17 +84,50 @@ export default function BuyModal({ listing, onClose, onSuccess }: BuyModalProps)
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-sm mx-4 rounded-2xl p-6"
             style={{
               background: "#0a0a0a",
-              border: `1px solid ${glowColor}30`,
-              boxShadow: `0 0 40px ${glowColor}15, 0 20px 60px rgba(0,0,0,0.8)`,
+              border: `1px solid ${bought ? "rgba(74,154,74,0.4)" : glowColor + "30"}`,
+              boxShadow: `0 0 40px ${bought ? "rgba(74,154,74,0.1)" : glowColor + "15"}, 0 20px 60px rgba(0,0,0,0.8)`,
             }}
           >
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full"
               style={{ background: "rgba(255,255,255,0.05)", color: "#404040" }}
             >
               <X size={14} />
             </button>
+
+            {/* Success screen */}
+            {bought && (
+              <div className="flex flex-col items-center text-center py-4 gap-4">
+                <CheckCircle size={40} style={{ color: "#4a9a4a" }} />
+                <div>
+                  <p className="text-base font-bold mb-1" style={{ color: "#efefef", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
+                    ¡Compra exitosa!
+                  </p>
+                  <p className="text-sm" style={{ color: "#404040" }}>
+                    El item ya está en tu inventario.
+                  </p>
+                </div>
+                <div className="flex gap-3 w-full mt-2">
+                  <button
+                    onClick={handleClose}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                    style={{ background: "rgba(255,255,255,0.04)", color: "#404040", border: "1px solid rgba(255,255,255,0.07)", fontFamily: "var(--font-syne), Syne, sans-serif" }}
+                  >
+                    Seguir
+                  </button>
+                  <button
+                    onClick={() => { handleClose(); router.push("/inventario"); }}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+                    style={{ background: "#efefef", color: "#000000", fontFamily: "var(--font-syne), Syne, sans-serif" }}
+                  >
+                    <Package size={14} /> Ver inventario
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!bought && (<>
 
             <h2 className="text-lg font-bold mb-4" style={{ color: "#efefef", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
               Confirmar compra
@@ -165,6 +206,7 @@ export default function BuyModal({ listing, onClose, onSuccess }: BuyModalProps)
                 <><CreditCard size={16} /> Comprar con créditos</>
               )}
             </button>
+            </>)}
           </motion.div>
         </>
       )}

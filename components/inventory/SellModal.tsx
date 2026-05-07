@@ -8,8 +8,6 @@ import type { InventoryItem } from "@/types/database";
 import { RARITIES, getConditionLabel, formatARS } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import RarityText from "@/components/ui/RarityText";
-import { createClient } from "@/lib/supabase/client";
-
 interface SellModalProps {
   inventoryItem: InventoryItem | null;
   onClose: () => void;
@@ -27,7 +25,6 @@ export default function SellModal({
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
 
   const rarity = (item?.rarity ?? "comun") as RarityKey;
   const config = RARITIES[rarity];
@@ -46,35 +43,18 @@ export default function SellModal({
     setLoading(true);
     setError(null);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setError("No autenticado.");
-      setLoading(false);
-      return;
-    }
-
-    // Create listing with credits price
-    const { error: listingError } = await supabase.from("listings").insert({
-      seller_id: user.id,
-      inventory_id: inventoryItem.id,
-      price_ars: priceNum,
-      price_credits: priceNum,
-      status: "active",
+    const res = await fetch("/api/create-listing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inventory_id: inventoryItem.id, price_credits: priceNum }),
     });
+    const data = await res.json();
 
-    if (listingError) {
-      setError(listingError.message);
+    if (!res.ok) {
+      setError(data.error ?? "Error al publicar.");
       setLoading(false);
       return;
     }
-
-    // Mark item as listed
-    await supabase
-      .from("inventory")
-      .update({ is_listed: true })
-      .eq("id", inventoryItem.id);
 
     setLoading(false);
     onSuccess();
