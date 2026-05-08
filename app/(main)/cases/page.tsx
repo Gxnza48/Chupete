@@ -11,6 +11,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { createClient } from "@/lib/supabase/client";
 import CaseOpenModal, { type CaseResult, type ItemsByRarity } from "@/components/cases/CaseOpenModal";
 import RarityText from "@/components/ui/RarityText";
+import PromoCode from "@/components/ui/PromoCode";
 
 /* ─── Countdown ─────────────────────────────────────────────────────────── */
 function Countdown({ nextOpenAt }: { nextOpenAt: string }) {
@@ -453,6 +454,11 @@ export default function CasesPage() {
             </motion.div>
           );
         })}
+      </div>
+
+      {/* Promo codes */}
+      <div className="mt-10">
+        <PromoCode onSuccess={refetch} />
       </div>
 
       {/* Confirm dialog */}
