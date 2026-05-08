@@ -4,6 +4,7 @@ import Navbar from "@/components/ui/Navbar";
 import { ClickerProvider } from "@/components/clicker/ClickerContext";
 import { ToastProvider } from "@/components/ui/Toast";
 import SessionRefresher from "@/components/auth/SessionRefresher";
+import NotificationWatcher from "@/components/auth/NotificationWatcher";
 
 export default async function MainLayout({
   children,
@@ -15,6 +16,7 @@ export default async function MainLayout({
       <ClickerProvider>
         <div style={{ background: "#000000", minHeight: "100vh" }}>
           <SessionRefresher />
+          <NotificationWatcher />
           <Navbar />
           <main>{children}</main>
         </div>

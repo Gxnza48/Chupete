@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { LogOut, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { LogOut, User, Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useClickerContext } from "@/components/clicker/ClickerContext";
@@ -14,13 +14,32 @@ const NAV_LINKS = [
   { href: "/cases", label: "Cajas" },
   { href: "/inventario", label: "Inventario" },
   { href: "/mercado", label: "Mercado" },
+  { href: "/trades", label: "Trades" },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
   const supabase = createClient();
+
+  // Check for unread notifications
+  useEffect(() => {
+    async function check() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const lastSeen = localStorage.getItem("notif_last_seen");
+      const since = lastSeen ?? new Date(0).toISOString();
+      const { count } = await supabase
+        .from("transactions")
+        .select("id", { count: "exact", head: true })
+        .or(`seller_id.eq.${user.id},buyer_id.eq.${user.id}`)
+        .gt("completed_at", since);
+      setHasUnread((count ?? 0) > 0);
+    }
+    check();
+  }, [supabase, pathname]);
   const { profile } = useProfile();
   const { localClicks } = useClickerContext();
 
@@ -86,7 +105,19 @@ export default function Navbar() {
         </div>
 
         {/* User menu */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Notifications bell */}
+          <Link
+            href="/notificaciones"
+            className="relative w-8 h-8 flex items-center justify-center rounded-lg transition-all"
+            style={{ background: pathname === "/notificaciones" ? "rgba(255,255,255,0.08)" : "transparent", color: "#404040" }}
+          >
+            <Bell size={16} />
+            {hasUnread && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: "#4a9a4a" }} />
+            )}
+          </Link>
+
           {profile ? (
             <div className="relative">
               <button
