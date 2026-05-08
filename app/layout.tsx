@@ -16,18 +16,31 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const APP_URL = "https://chupete-chi.vercel.app";
+
 export const metadata: Metadata = {
   title: "ChupeteClicker — Coleccionables Argentinos",
   description:
-    "Clickeá el chupete y conseguí items coleccionables con rarezas únicas. Vendé en el mercado interno con Mercado Pago.",
-  keywords: [
-    "coleccionables",
-    "argentina",
-    "clicker",
-    "mercado pago",
-    "items",
-    "rarezas",
-  ],
+    "Clickeá el chupete, abrí cajas y coleccioná items únicos con rarezas exclusivas. Vendé en el mercado interno.",
+  keywords: ["coleccionables", "argentina", "clicker", "items", "rarezas", "juego"],
+  metadataBase: new URL(APP_URL),
+  openGraph: {
+    title: "ChupeteClicker — Coleccionables Argentinos",
+    description:
+      "Clickeá el chupete, abrí cajas y coleccioná items únicos con rarezas exclusivas.",
+    url: APP_URL,
+    siteName: "ChupeteClicker",
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: "ChupeteClicker" }],
+    type: "website",
+    locale: "es_AR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ChupeteClicker — Coleccionables Argentinos",
+    description:
+      "Clickeá el chupete, abrí cajas y coleccioná items únicos con rarezas exclusivas.",
+    images: ["/api/og"],
+  },
 };
 
 export default function RootLayout({

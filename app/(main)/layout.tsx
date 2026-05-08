@@ -5,6 +5,7 @@ import { ClickerProvider } from "@/components/clicker/ClickerContext";
 import { ToastProvider } from "@/components/ui/Toast";
 import SessionRefresher from "@/components/auth/SessionRefresher";
 import NotificationWatcher from "@/components/auth/NotificationWatcher";
+import WelcomeModal from "@/components/ui/WelcomeModal";
 
 export default async function MainLayout({
   children,
@@ -17,6 +18,7 @@ export default async function MainLayout({
         <div style={{ background: "#000000", minHeight: "100vh" }}>
           <SessionRefresher />
           <NotificationWatcher />
+          <WelcomeModal />
           <Navbar />
           <main>{children}</main>
         </div>
