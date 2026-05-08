@@ -70,9 +70,8 @@ export default function TradesPage() {
         .from("listings")
         .select(`
           id, price_credits, sold_at,
-          inventory:inventory(float_value, item:items(name,rarity,image_url)),
-          seller:profiles!listings_seller_id_fkey(username),
-          buyer_profile:transactions!inner(buyer:profiles!transactions_buyer_id_fkey(username))
+          inventory:inventory(float_value, user_id, item:items(name,rarity,image_url)),
+          seller:profiles!listings_seller_id_fkey(username)
         `)
         .eq("status", "sold")
         .order("sold_at", { ascending: false })
@@ -80,23 +79,29 @@ export default function TradesPage() {
 
       if (!data) { setLoading(false); return; }
 
-      const parsed: Trade[] = data.map((row: unknown) => {
-        const r = row as {
-          id: string; price_credits: number; sold_at: string;
-          inventory: { float_value: number; item: { name: string; rarity: string; image_url: string } } | null;
-          seller: { username: string } | null;
-          buyer_profile: { buyer: { username: string } }[];
-        };
-        return {
-          id: r.id,
-          price_credits: r.price_credits ?? 0,
-          sold_at: r.sold_at ?? "",
-          item: r.inventory?.item ?? { name: "Item", rarity: "comun", image_url: "" },
-          seller: r.seller ?? { username: "?" },
-          buyer: r.buyer_profile?.[0]?.buyer ?? { username: "?" },
-          float_value: r.inventory?.float_value ?? 0,
-        };
-      });
+      // Fetch buyer usernames in one query using inventory.user_id
+      type RawRow = {
+        id: string; price_credits: number; sold_at: string;
+        inventory: { float_value: number; user_id: string; item: { name: string; rarity: string; image_url: string } } | null;
+        seller: { username: string } | null;
+      };
+      const rows = data as unknown as RawRow[];
+      const buyerIds = [...new Set(rows.map((r) => r.inventory?.user_id).filter(Boolean))] as string[];
+      const { data: buyerProfiles } = buyerIds.length
+        ? await supabase.from("profiles").select("id, username").in("id", buyerIds)
+        : { data: [] };
+      const buyerMap: Record<string, string> = {};
+      for (const p of buyerProfiles ?? []) buyerMap[p.id] = p.username;
+
+      const parsed: Trade[] = rows.map((r) => ({
+        id: r.id,
+        price_credits: r.price_credits ?? 0,
+        sold_at: r.sold_at ?? "",
+        item: r.inventory?.item ?? { name: "Item", rarity: "comun", image_url: "" },
+        seller: r.seller ?? { username: "?" },
+        buyer: { username: buyerMap[r.inventory?.user_id ?? ""] ?? "?" },
+        float_value: r.inventory?.float_value ?? 0,
+      }));
 
       setTrades(parsed);
 
