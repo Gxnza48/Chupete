@@ -77,6 +77,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Error al guardar el item." }, { status: 500 });
     }
 
+    await admin.from("credit_transactions").insert({
+      user_id: user.id,
+      amount: -caseDef.price_credits,
+      reason: "open_case",
+      ref_id: caseDef.id,
+    });
+
     return NextResponse.json({
       item: { ...item, float_value: floatValue, inventory_id: inventoryEntry.id },
       credits_spent: caseDef.price_credits,

@@ -190,9 +190,17 @@ export default function TradesPage() {
                     <RarityText rarity={rarity} className="text-[9px] flex-shrink-0" />
                   </div>
                   <p className="text-[10px]" style={{ color: "#404040" }}>
-                    <span style={{ color: "#606060" }}>{t.seller.username}</span>
+                    <a href={`/perfil/${t.seller.username}`} style={{ color: "#606060", textDecoration: "none" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#efefef")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#606060")}>
+                      {t.seller.username}
+                    </a>
                     {" → "}
-                    <span style={{ color: "#606060" }}>{t.buyer.username}</span>
+                    <a href={`/perfil/${t.buyer.username}`} style={{ color: "#606060", textDecoration: "none" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#efefef")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#606060")}>
+                      {t.buyer.username}
+                    </a>
                   </p>
                 </div>
 

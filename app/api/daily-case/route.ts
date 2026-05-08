@@ -58,7 +58,9 @@ export async function POST() {
         credits: (profile.credits ?? 0) + credits,
         last_daily_case_at: now,
       }).eq("id", user.id);
-
+      await admin.from("credit_transactions").insert({
+        user_id: user.id, amount: credits, reason: "daily_case", ref_id: "daily",
+      });
       return NextResponse.json({ type: "credits", credits_won: credits });
     }
 
@@ -83,6 +85,9 @@ export async function POST() {
       .single();
 
     await admin.from("profiles").update({ last_daily_case_at: now }).eq("id", user.id);
+    await admin.from("credit_transactions").insert({
+      user_id: user.id, amount: 0, reason: "daily_case", ref_id: "daily_item",
+    });
 
     return NextResponse.json({
       type: "item",

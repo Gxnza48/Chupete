@@ -45,7 +45,7 @@ export default function NotificacionesPage() {
       const { sold, bought, credits } = await res.json() as {
         sold: { id: string; price_credits: number; date: string; item: { name: string; rarity: string } }[];
         bought: { id: string; price_credits: number; date: string; item: { name: string; rarity: string } }[];
-        credits: { id: string; amount: number; reason: string; created_at: string }[];
+        credits: { id: string; amount: number; reason: string; created_at: string; display_name: string }[];
       };
 
       const all: NotifEntry[] = [];
@@ -82,10 +82,7 @@ export default function NotificacionesPage() {
         all.push({
           id: `cr-${c.id}`,
           type: isCase ? "case" : "credit",
-          title: c.reason === "open_case" ? "Abriste una caja"
-            : c.reason === "daily_case" ? "Caja diaria"
-            : c.reason === "shop_purchase" ? "Compra en tienda"
-            : "Movimiento de créditos",
+          title: c.display_name,
           subtitle: `${c.amount > 0 ? "+" : ""}${formatNum(c.amount)} cr.`,
           amount: Math.abs(c.amount),
           amountSign: c.amount >= 0 ? "+" : "-",

@@ -51,6 +51,12 @@ function getLevelBadgeStyle(level: number): React.CSSProperties {
   return { background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.12)", color: "#efefef" };
 }
 
+export function getBannerStyle(profile: Profile): React.CSSProperties {
+  return profile.banner_color
+    ? { background: `linear-gradient(135deg, ${profile.banner_color} 0%, #060606 100%)` }
+    : { background: "linear-gradient(135deg, #111 0%, #060606 100%)" };
+}
+
 export default function ProfileHeader({ profile, itemCount = 0, isOwner = false }: ProfileHeaderProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
@@ -75,9 +81,6 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
 
   useEffect(() => { fetchCosmetics(); }, [fetchCosmetics]);
 
-  const bannerBg = profile.banner_color
-    ? `linear-gradient(135deg, ${profile.banner_color} 0%, #060606 100%)`
-    : "linear-gradient(135deg, #111 0%, #060606 100%)";
 
   const usernameColor = profile.username_color ?? "#efefef";
 
@@ -95,7 +98,7 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
   const decorCharms = equippedCharms.filter((c) => !c.shop_item?.key?.startsWith("effect_"));
 
   return (
-    <div className="flex flex-col items-center gap-6 py-8" style={{ background: bannerBg, borderRadius: "inherit" }}>
+    <div className="flex flex-col items-center gap-6 py-8">
       {/* Avatar */}
       <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative">
         <div

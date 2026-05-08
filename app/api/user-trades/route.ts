@@ -30,7 +30,7 @@ export async function GET() {
     // Credit transactions (cases, shop)
     admin
       .from("credit_transactions")
-      .select("id, amount, reason, created_at")
+      .select("id, amount, reason, ref_id, created_at")
       .eq("user_id", user.id)
       .not("reason", "in", '("purchase","sale")')
       .order("created_at", { ascending: false })
@@ -74,6 +74,12 @@ export async function GET() {
     boughtInvMap[inv.id] = (inv.item as unknown as { name: string; rarity: string });
   }
 
+  // Resolve case names from ref_id
+  const CASE_NAMES: Record<string, string> = {
+    basica: "Caja Albiceleste", premium: "Caja Bonaerense", exclusiva: "Caja Obelisco",
+    daily: "Caja Diaria (créditos)", daily_item: "Caja Diaria (item)",
+  };
+
   return NextResponse.json({
     sold: (sold ?? []).map((s) => ({
       id: s.id,
@@ -87,6 +93,15 @@ export async function GET() {
       date: b.sold_at,
       item: boughtInvMap[b.inventory_id] ?? { name: "Item", rarity: "comun" },
     })),
-    credits: creditMovements ?? [],
+    credits: (creditMovements ?? []).map((c) => ({
+      ...c,
+      display_name: c.reason === "open_case"
+        ? `Abriste ${CASE_NAMES[c.ref_id] ?? "una caja"}`
+        : c.reason === "daily_case"
+        ? `${CASE_NAMES[c.ref_id] ?? "Caja Diaria"}`
+        : c.reason === "shop_purchase"
+        ? "Compra en tienda"
+        : "Movimiento de créditos",
+    })),
   });
 }
