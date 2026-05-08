@@ -6,7 +6,8 @@ import { CASE_LIST, getPercentages, RARITY_COLOR, DAILY_CASE_COOLDOWN_HOURS, typ
 import { RARITIES } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import { useProfile } from "@/hooks/useProfile";
-import CaseOpenModal, { type CaseResult } from "@/components/cases/CaseOpenModal";
+import { createClient } from "@/lib/supabase/client";
+import CaseOpenModal, { type CaseResult, type ItemsByRarity } from "@/components/cases/CaseOpenModal";
 import RarityText from "@/components/ui/RarityText";
 
 function Countdown({ nextOpenAt }: { nextOpenAt: string }) {
@@ -70,6 +71,21 @@ export default function CasesPage() {
   const [error, setError] = useState<string | null>(null);
   const [dailyAvailable, setDailyAvailable] = useState(false);
   const [dailyNextOpenAt, setDailyNextOpenAt] = useState<string | null>(null);
+  const [itemsByRarity, setItemsByRarity] = useState<ItemsByRarity>({});
+
+  // Fetch all items for strip population
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.from("items").select("id, name, rarity, image_url").then(({ data }) => {
+      if (!data) return;
+      const grouped: ItemsByRarity = {};
+      for (const item of data) {
+        if (!grouped[item.rarity]) grouped[item.rarity] = [];
+        grouped[item.rarity].push(item);
+      }
+      setItemsByRarity(grouped);
+    });
+  }, []);
 
   const fetchDailyStatus = useCallback(async () => {
     const res = await fetch("/api/daily-case");
@@ -303,6 +319,7 @@ export default function CasesPage() {
         <CaseOpenModal
           result={result}
           caseRarities={activeCaseDef?.rarities ?? dailyRarities}
+          itemsByRarity={itemsByRarity}
           onClose={handleClose}
           onOpenAnother={activeCaseDef ? handleOpenAnother : undefined}
         />

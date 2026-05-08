@@ -28,27 +28,34 @@ export type CaseResult =
   | { type: "item"; item: { id: string; name: string; rarity: string; image_url: string; float_value: number } }
   | { type: "credits"; credits_won: number };
 
+export type ItemsByRarity = Record<string, { id: string; name: string; image_url: string }[]>;
+
 interface Props {
   result: CaseResult | null;
   caseRarities: CaseRarityEntry[];
+  itemsByRarity: ItemsByRarity;
   onClose: () => void;
   onOpenAnother?: () => void;
 }
 
-function buildStrip(result: CaseResult, rarities: CaseRarityEntry[]): StripCard[] {
+function pickItem(rarity: RarityKey, itemsByRarity: ItemsByRarity) {
+  const pool = itemsByRarity[rarity] ?? [];
+  if (!pool.length) return { name: undefined, imageUrl: undefined };
+  const item = pool[Math.floor(Math.random() * pool.length)];
+  return { name: item.name, imageUrl: item.image_url };
+}
+
+function buildStrip(result: CaseResult, rarities: CaseRarityEntry[], itemsByRarity: ItemsByRarity): StripCard[] {
   return Array.from({ length: STRIP_SIZE }, (_, i) => {
     if (i === WINNER_IDX) {
       if (result.type === "item") {
-        return {
-          rarity: result.item.rarity as RarityKey,
-          isWinner: true,
-          itemName: result.item.name,
-          imageUrl: result.item.image_url,
-        };
+        return { rarity: result.item.rarity as RarityKey, isWinner: true, itemName: result.item.name, imageUrl: result.item.image_url };
       }
       return { rarity: "comun", isWinner: true, credits: result.credits_won };
     }
-    return { rarity: rollRarity(rarities), isWinner: false };
+    const rarity = rollRarity(rarities);
+    const { name, imageUrl } = pickItem(rarity, itemsByRarity);
+    return { rarity, isWinner: false, itemName: name, imageUrl };
   });
 }
 
@@ -95,8 +102,9 @@ function StripCardEl({ card, phase }: { card: StripCard; phase: string }) {
             className="object-contain"
             style={{
               mixBlendMode: "screen",
-              opacity: card.imageUrl ? 1 : 0.3,
               filter: `drop-shadow(0 0 8px ${color}50)`,
+              maskImage: "radial-gradient(circle at center, black 48%, transparent 74%)",
+              WebkitMaskImage: "radial-gradient(circle at center, black 48%, transparent 74%)",
             }}
           />
         )}
@@ -126,7 +134,7 @@ function StripCardEl({ card, phase }: { card: StripCard; phase: string }) {
   );
 }
 
-export default function CaseOpenModal({ result, caseRarities, onClose, onOpenAnother }: Props) {
+export default function CaseOpenModal({ result, caseRarities, itemsByRarity, onClose, onOpenAnother }: Props) {
   const [phase, setPhase] = useState<"idle" | "spinning" | "result">("idle");
   const [strip, setStrip] = useState<StripCard[]>([]);
   const [winnerCard, setWinnerCard] = useState<StripCard | null>(null);
@@ -135,7 +143,7 @@ export default function CaseOpenModal({ result, caseRarities, onClose, onOpenAno
   const router = useRouter();
 
   const runStrip = useCallback((res: CaseResult) => {
-    const newStrip = buildStrip(res, caseRarities);
+    const newStrip = buildStrip(res, caseRarities, itemsByRarity);
     setStrip(newStrip);
     setWinnerCard(newStrip[WINNER_IDX]);
     stripX.set(0);
