@@ -128,8 +128,9 @@ export default function TradesPage() {
     load();
 
     // Realtime for new sales
+    const sessionId = Math.random().toString(36).slice(2);
     const ch = supabase
-      .channel("trades-realtime")
+      .channel(`trades-realtime:${sessionId}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "listings" }, () => load())
       .subscribe();
 

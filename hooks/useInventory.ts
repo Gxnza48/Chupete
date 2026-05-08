@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+
+const SESSION_ID = Math.random().toString(36).slice(2);
 import { createClient } from "@/lib/supabase/client";
 import type { InventoryItem } from "@/types/database";
 import { RARITY_ORDER, type RarityKey } from "@/lib/rarities";
@@ -60,7 +62,7 @@ export function useInventory() {
       if (!user) return;
 
       channel = supabase
-        .channel(`inventory:${user.id}`)
+        .channel(`inventory:${user.id}:${SESSION_ID}`)
         .on(
           "postgres_changes",
           {

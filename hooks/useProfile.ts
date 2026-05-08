@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+
+const SESSION_ID = Math.random().toString(36).slice(2);
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/types/database";
 
@@ -61,7 +63,7 @@ export function useProfile() {
       if (!user) return;
 
       channel = supabase
-        .channel(`profile:${user.id}`)
+        .channel(`profile:${user.id}:${SESSION_ID}`)
         .on(
           "postgres_changes",
           {
