@@ -51,12 +51,6 @@ function getLevelBadgeStyle(level: number): React.CSSProperties {
   return { background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.12)", color: "#efefef" };
 }
 
-export function getBannerStyle(profile: Profile): React.CSSProperties {
-  return profile.banner_color
-    ? { background: `linear-gradient(135deg, ${profile.banner_color} 0%, #060606 100%)` }
-    : { background: "linear-gradient(135deg, #111 0%, #060606 100%)" };
-}
-
 export default function ProfileHeader({ profile, itemCount = 0, isOwner = false }: ProfileHeaderProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);

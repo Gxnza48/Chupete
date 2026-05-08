@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import ProfileHeader, { getBannerStyle } from "@/components/profile/ProfileHeader";
+import ProfileHeader from "@/components/profile/ProfileHeader";
 import BadgeRow from "@/components/profile/BadgeRow";
 import PublicInventoryGrid from "@/components/profile/PublicInventoryGrid";
 import ProfileParticlesWrapper from "@/components/profile/ProfileParticlesWrapper";
@@ -60,7 +60,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       {/* Profile header with particles */}
       <div
         className="relative rounded-2xl px-6 mb-8 overflow-hidden"
-        style={{ border: "1px solid rgba(255,255,255,0.05)", ...getBannerStyle(typedProfile) }}
+        style={{
+          border: "1px solid rgba(255,255,255,0.05)",
+          background: typedProfile.banner_color
+            ? `linear-gradient(135deg, ${typedProfile.banner_color} 0%, #060606 100%)`
+            : "linear-gradient(135deg, #111 0%, #060606 100%)",
+        }}
       >
         <ProfileParticlesWrapper userId={typedProfile.id} />
         <div className="relative z-10">
