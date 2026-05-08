@@ -313,14 +313,14 @@ export default function CasesPage() {
               </div>
             </div>
             <button onClick={openDailyCase} disabled={!dailyAvailable || loadingCase === "daily"}
-              className="flex-shrink-0 px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
+              className="w-full sm:w-auto sm:flex-shrink-0 px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
               style={{
                 background: dailyAvailable ? "#4a9a4a" : "rgba(255,255,255,0.04)",
                 color: dailyAvailable ? "#fff" : "#404040",
                 cursor: dailyAvailable ? "pointer" : "not-allowed",
                 fontFamily: "var(--font-syne), Syne, sans-serif",
-                minWidth: 0,
-              width: "100%", textAlign: "center", border: "none",
+                minWidth: 130,
+                textAlign: "center", border: "none",
               }}>
               {loadingCase === "daily" ? "Abriendo..." : dailyAvailable ? "Abrir gratis" : dailyNextOpenAt ? <Countdown nextOpenAt={dailyNextOpenAt} /> : "—"}
             </button>

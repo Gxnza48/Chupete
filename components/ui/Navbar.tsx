@@ -132,18 +132,21 @@ export default function Navbar() {
                   fontFamily: "var(--font-syne), Syne, sans-serif",
                 }}
               >
-                <span className="font-medium truncate max-w-[100px] sm:max-w-[160px]">{profile.username}</span>
+                <span className="font-medium truncate max-w-[80px] sm:max-w-[140px]">{profile.username}</span>
                 {profile.credits !== undefined && (
                   <span
-                    className="text-xs px-1.5 py-0.5 rounded hidden sm:inline"
+                    className="text-xs px-1.5 py-0.5 rounded"
                     style={{
                       background: "rgba(74,154,74,0.12)",
                       color: "#4a9a4a",
                       fontFamily: "var(--font-jetbrains-mono), monospace",
                       border: "1px solid rgba(74,154,74,0.2)",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    {(profile.credits ?? 0).toLocaleString("es-AR")} cr.
+                    {(profile.credits ?? 0) >= 1000
+                      ? `${((profile.credits ?? 0) / 1000).toFixed(1)}K`
+                      : profile.credits ?? 0} cr.
                   </span>
                 )}
                 <span
