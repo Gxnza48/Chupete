@@ -11,7 +11,7 @@ export default async function Home() {
       {/* Logo */}
       <div className="text-center mb-10">
         <h1
-          className="text-4xl font-extrabold tracking-tight mb-1"
+          className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-1"
           style={{
             fontFamily: "var(--font-syne), Syne, sans-serif",
             color: "#efefef",

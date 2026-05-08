@@ -98,7 +98,7 @@ export default function BuyModal({ listing, onClose, onSuccess }: BuyModalProps)
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 20 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-sm mx-4 rounded-2xl p-6"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100%-2rem)] max-w-sm rounded-2xl p-5 sm:p-6"
             style={{
               background: "#0a0a0a",
               border: `1px solid ${bought ? "rgba(74,154,74,0.4)" : glowColor + "30"}`,

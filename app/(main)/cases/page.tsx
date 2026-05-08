@@ -291,7 +291,7 @@ export default function CasesPage() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl overflow-hidden"
           style={{ background: "#060606", border: `1px solid ${dailyAvailable ? "rgba(74,154,74,0.35)" : "rgba(255,255,255,0.05)"}` }}>
-          <div className="p-5 flex items-center gap-5">
+          <div className="p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
             <DailyCaseArt available={dailyAvailable} />
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm mb-0.5" style={{ color: "#efefef", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
@@ -319,7 +319,8 @@ export default function CasesPage() {
                 color: dailyAvailable ? "#fff" : "#404040",
                 cursor: dailyAvailable ? "pointer" : "not-allowed",
                 fontFamily: "var(--font-syne), Syne, sans-serif",
-                minWidth: 130, textAlign: "center", border: "none",
+                minWidth: 0,
+              width: "100%", textAlign: "center", border: "none",
               }}>
               {loadingCase === "daily" ? "Abriendo..." : dailyAvailable ? "Abrir gratis" : dailyNextOpenAt ? <Countdown nextOpenAt={dailyNextOpenAt} /> : "—"}
             </button>
@@ -354,7 +355,7 @@ export default function CasesPage() {
 
       {/* Paid cases */}
       <p className="text-[11px] uppercase tracking-widest mb-3 font-semibold" style={{ color: "#2a2a2a", fontFamily: "var(--font-syne), Syne, sans-serif" }}>Colecciones</p>
-      <div className="grid gap-5 sm:grid-cols-3" style={{ alignItems: "start" }}>
+      <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-3" style={{ alignItems: "start" }}>
         {CASE_LIST.map((c, i) => {
           const percentages = getPercentages(c.rarities);
           const isLoading = loadingCase === c.id;

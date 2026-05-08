@@ -74,7 +74,7 @@ function MercadoContent() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
         <div>
           <h1
             className="text-2xl font-bold"
@@ -119,7 +119,7 @@ function MercadoContent() {
         <div
           className="grid gap-4"
           style={{
-            gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
           }}
         >
           {Array.from({ length: 8 }).map((_, i) => (
@@ -176,7 +176,7 @@ function MercadoContent() {
           animate={{ opacity: 1 }}
           className="grid gap-4"
           style={{
-            gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
           }}
         >
           {listings.map((listing, index) => (

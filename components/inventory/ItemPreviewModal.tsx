@@ -129,7 +129,7 @@ export default function ItemPreviewModal({ inventoryItem, onClose, onRefetch, re
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 24 }}
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-xs rounded-2xl overflow-hidden"
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100%-2rem)] max-w-xs rounded-2xl overflow-hidden"
               style={{ background: "#0a0a0a", border: `1px solid ${glowColor}35`, boxShadow: `0 0 60px ${glowColor}12, 0 24px 80px rgba(0,0,0,0.95)`, maxHeight: "90vh", overflowY: "auto" }}
             >
               {/* Image area */}

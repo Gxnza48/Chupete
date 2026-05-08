@@ -132,10 +132,10 @@ export default function Navbar() {
                   fontFamily: "var(--font-syne), Syne, sans-serif",
                 }}
               >
-                <span className="font-medium">{profile.username}</span>
+                <span className="font-medium truncate max-w-[100px] sm:max-w-[160px]">{profile.username}</span>
                 {profile.credits !== undefined && (
                   <span
-                    className="text-xs px-1.5 py-0.5 rounded"
+                    className="text-xs px-1.5 py-0.5 rounded hidden sm:inline"
                     style={{
                       background: "rgba(74,154,74,0.12)",
                       color: "#4a9a4a",

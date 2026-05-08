@@ -13,7 +13,7 @@ interface InventoryGridProps {
 export default function InventoryGrid({ items, isLoading = false, onPreview }: InventoryGridProps) {
   if (isLoading) {
     return (
-      <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}>
+      <div className="grid gap-3 sm:gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}>
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="rounded-xl animate-pulse" style={{ width: 160, height: 220, background: "#060606", border: "1px solid rgba(255,255,255,0.05)" }} />
         ))}

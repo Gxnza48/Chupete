@@ -10,7 +10,7 @@ import type { RarityKey } from "@/lib/rarities";
 import { rollRarity, RARITY_COLOR, type CaseRarityEntry } from "@/lib/cases";
 import RarityText from "@/components/ui/RarityText";
 
-const CARD_W = 148;
+const CARD_W = typeof window !== "undefined" && window.innerWidth < 480 ? 110 : 148;
 const CARD_GAP = 8;
 const STRIDE = CARD_W + CARD_GAP;
 const STRIP_SIZE = 32;

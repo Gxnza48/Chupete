@@ -27,7 +27,7 @@ export default function XPStatsBar() {
 
   return (
     <div
-      className="mt-10 w-full max-w-sm rounded-2xl px-5 py-4"
+      className="mt-10 w-full sm:max-w-sm rounded-2xl px-4 sm:px-5 py-4"
       style={{
         background: "#060606",
         border: "1px solid rgba(255,255,255,0.05)",

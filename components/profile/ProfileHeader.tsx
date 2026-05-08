@@ -131,7 +131,7 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
       {/* Username */}
       <div className="text-center">
         <div className="flex items-center justify-center gap-2 mb-1">
-          <h1 className="text-3xl font-bold" style={{ color: usernameColor, fontFamily: "var(--font-syne), Syne, sans-serif" }}>
+          <h1 className="text-2xl sm:text-3xl font-bold break-all" style={{ color: usernameColor, fontFamily: "var(--font-syne), Syne, sans-serif" }}>
             {profile.username}
           </h1>
           {isOwner && (
@@ -163,7 +163,7 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
       </div>
 
       {/* XP Bar */}
-      <div className="w-full max-w-xs">
+      <div className="w-full px-2 sm:px-0 sm:max-w-xs">
         <div className="flex justify-between text-xs mb-1.5" style={{ color: "#404040" }}>
           <span>XP</span>
           <span style={{ fontFamily: "var(--font-jetbrains-mono), monospace" }}>
@@ -182,15 +182,15 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
       </div>
 
       {/* Stats row */}
-      <div className="flex items-center gap-6">
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
         <Stat label="Clicks" value={formatNum(profile.total_clicks)} />
-        <div style={{ width: "1px", height: "32px", background: "rgba(255,255,255,0.07)" }} />
+        <div style={{ width: "1px", height: "28px", background: "rgba(255,255,255,0.07)" }} />
         <Stat label="Items" value={formatNum(itemCount)} />
-        <div style={{ width: "1px", height: "32px", background: "rgba(255,255,255,0.07)" }} />
+        <div style={{ width: "1px", height: "28px", background: "rgba(255,255,255,0.07)" }} />
         <Stat label="Nivel" value={String(level)} />
         {isOwner && profile.credits !== undefined && (
           <>
-            <div style={{ width: "1px", height: "32px", background: "rgba(255,255,255,0.07)" }} />
+            <div style={{ width: "1px", height: "28px", background: "rgba(255,255,255,0.07)" }} />
             <Stat label="Créditos" value={formatNum(profile.credits)} />
           </>
         )}
@@ -198,7 +198,7 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
 
       {/* Customizer + Shop (owner only) */}
       {isOwner && (
-        <div className="w-full max-w-xs">
+        <div className="w-full px-2 sm:px-0 sm:max-w-xs">
           <button
             onClick={() => setShopOpen(true)}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold mb-3"

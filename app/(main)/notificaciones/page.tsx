@@ -112,7 +112,7 @@ export default function NotificacionesPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-6 flex-wrap">
+      <div className="flex gap-2 mb-6 flex-wrap overflow-x-auto pb-1">
         {(["all", "sold", "bought", "case"] as const).map((f) => (
           <button key={f} onClick={() => setFilter(f)}
             className="px-4 py-1.5 rounded-full text-xs font-semibold transition-all"

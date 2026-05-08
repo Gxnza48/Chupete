@@ -135,7 +135,7 @@ function ClickerContent() {
       )}
 
       {/* Click area */}
-      <div className="relative flex items-center justify-center" style={{ width: 240, height: 240 }}>
+      <div className="relative flex items-center justify-center" style={{ width: "min(240px, 80vw)", height: "min(240px, 80vw)" }}>
 
         {/* Rarity ambient glow (legendary+) */}
         {isLegendaryPlus && (
@@ -210,6 +210,7 @@ function ClickerContent() {
             height={220}
             priority
             draggable={false}
+            className="w-[min(220px,75vw)] h-[min(220px,75vw)]"
             style={{
               mixBlendMode: "screen",
               maskImage: equippedItem

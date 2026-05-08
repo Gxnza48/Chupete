@@ -131,7 +131,7 @@ export default function TradesPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {[
           { label: "Total trades", value: formatNum(stats.total) },
           { label: "Volumen total", value: `${formatNum(stats.volume)} cr.` },
@@ -171,7 +171,7 @@ export default function TradesPage() {
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.02 }}
-                className="flex items-center gap-4 px-4 py-3 rounded-xl"
+                className="flex items-center gap-3 px-3 sm:px-4 py-3 rounded-xl"
                 style={{ background: "#060606", border: `1px solid ${color}18` }}
               >
                 {/* Item image */}
