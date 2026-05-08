@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const SESSION_ID = Math.random().toString(36).slice(2);
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/types/database";
 
@@ -55,6 +54,7 @@ export function useProfile() {
   // Realtime subscription
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    const sid = Math.random().toString(36).slice(2);
 
     async function subscribe() {
       const {
@@ -63,7 +63,7 @@ export function useProfile() {
       if (!user) return;
 
       channel = supabase
-        .channel(`profile:${user.id}:${SESSION_ID}`)
+        .channel(`profile:${user.id}:${sid}`)
         .on(
           "postgres_changes",
           {

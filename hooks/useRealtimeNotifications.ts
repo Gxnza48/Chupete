@@ -6,7 +6,6 @@ import { useToast } from "@/components/ui/Toast";
 import { formatNum } from "@/lib/format";
 
 // Unique ID per browser session to prevent lock conflicts across tabs
-const SESSION_ID = Math.random().toString(36).slice(2);
 
 export function useRealtimeNotifications() {
   const supabase = createClient();
@@ -57,9 +56,10 @@ export function useRealtimeNotifications() {
       // Poll credits every 4s (reliable across all Supabase plan configs)
       pollRef.current = setInterval(checkCredits, 4000);
 
+      const sid = Math.random().toString(36).slice(2);
       // Realtime on listings where I'm the seller → sale notification
       listingsChannel = supabase
-        .channel(`notif-listings:${user.id}:${SESSION_ID}`)
+        .channel(`notif-listings:${user.id}:${sid}`)
         .on("postgres_changes", {
           event: "UPDATE",
           schema: "public",

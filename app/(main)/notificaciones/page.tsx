@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
 import { formatNum } from "@/lib/format";
 import { RARITIES } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
@@ -41,90 +40,52 @@ export default function NotificacionesPage() {
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
-
-      const [
-        { data: soldListings },
-        { data: boughtInventory },
-        { data: creditMovements },
-      ] = await Promise.all([
-        // Listings I sold
-        supabase
-          .from("listings")
-          .select("id, price_credits, sold_at, inventory:inventory(item:items(name,rarity))")
-          .eq("seller_id", user.id)
-          .eq("status", "sold")
-          .order("sold_at", { ascending: false })
-          .limit(50),
-
-        // Listings I bought — found via inventory.user_id after transfer
-        supabase
-          .from("listings")
-          .select("id, price_credits, sold_at, inventory:inventory!listings_inventory_id_fkey(user_id, item:items(name,rarity))")
-          .eq("status", "sold")
-          .neq("seller_id", user.id)
-          .order("sold_at", { ascending: false })
-          .limit(200),
-
-        // Credit transactions (cases, shop purchases)
-        supabase
-          .from("credit_transactions")
-          .select("id, amount, reason, created_at")
-          .eq("user_id", user.id)
-          .not("reason", "in", '("purchase","sale")')
-          .order("created_at", { ascending: false })
-          .limit(50),
-      ]);
+      const res = await fetch("/api/user-trades");
+      if (!res.ok) { setLoading(false); return; }
+      const { sold, bought, credits } = await res.json() as {
+        sold: { id: string; price_credits: number; date: string; item: { name: string; rarity: string } }[];
+        bought: { id: string; price_credits: number; date: string; item: { name: string; rarity: string } }[];
+        credits: { id: string; amount: number; reason: string; created_at: string }[];
+      };
 
       const all: NotifEntry[] = [];
 
-      type SoldRow = { id: string; price_credits: number; sold_at: string; inventory: { item: { name: string; rarity: string } } | null };
-      for (const s of (soldListings ?? []) as unknown as SoldRow[]) {
-        const item = s.inventory?.item;
+      for (const s of sold) {
         const net = Math.floor((s.price_credits ?? 0) * 0.95);
         all.push({
           id: `sold-${s.id}`,
           type: "sold",
-          title: `Vendiste ${item?.name ?? "un item"}`,
+          title: `Vendiste ${s.item?.name ?? "un item"}`,
           subtitle: `+${formatNum(net)} cr. (después de comisión 5%)`,
           amount: net,
           amountSign: "+",
-          date: s.sold_at,
-          rarity: item?.rarity as RarityKey | undefined,
+          date: s.date,
+          rarity: s.item?.rarity as RarityKey | undefined,
         });
       }
 
-      // Filter bought: inventory.user_id must be our user
-      type BoughtRow = { id: string; price_credits: number; sold_at: string; inventory: { user_id: string; item: { name: string; rarity: string } } | null };
-      for (const b of (boughtInventory ?? []) as unknown as BoughtRow[]) {
-        if (b.inventory?.user_id !== user.id) continue;
-        const item = b.inventory?.item;
+      for (const b of bought) {
         all.push({
           id: `bought-${b.id}`,
           type: "bought",
-          title: `Compraste ${item?.name ?? "un item"}`,
+          title: `Compraste ${b.item?.name ?? "un item"}`,
           subtitle: `-${formatNum(b.price_credits ?? 0)} cr.`,
           amount: b.price_credits ?? 0,
           amountSign: "-",
-          date: b.sold_at,
-          rarity: item?.rarity as RarityKey | undefined,
+          date: b.date,
+          rarity: b.item?.rarity as RarityKey | undefined,
         });
       }
 
-      type CrRow = { id: string; amount: number; reason: string; created_at: string };
-      for (const c of (creditMovements ?? []) as unknown as CrRow[]) {
+      for (const c of credits) {
         const isCase = c.reason?.includes("case");
-        const title =
-          c.reason === "open_case" ? "Abriste una caja" :
-          c.reason === "daily_case" ? "Caja diaria" :
-          c.reason === "shop_purchase" ? "Compra en tienda" :
-          "Movimiento de créditos";
         all.push({
           id: `cr-${c.id}`,
           type: isCase ? "case" : "credit",
-          title,
+          title: c.reason === "open_case" ? "Abriste una caja"
+            : c.reason === "daily_case" ? "Caja diaria"
+            : c.reason === "shop_purchase" ? "Compra en tienda"
+            : "Movimiento de créditos",
           subtitle: `${c.amount > 0 ? "+" : ""}${formatNum(c.amount)} cr.`,
           amount: Math.abs(c.amount),
           amountSign: c.amount >= 0 ? "+" : "-",

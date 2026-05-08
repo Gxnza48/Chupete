@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const SESSION_ID = Math.random().toString(36).slice(2);
 import { createClient } from "@/lib/supabase/client";
 import type { InventoryItem } from "@/types/database";
 import { RARITY_ORDER, type RarityKey } from "@/lib/rarities";
@@ -54,6 +53,7 @@ export function useInventory() {
   // Realtime subscription
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    const sid = Math.random().toString(36).slice(2);
 
     async function subscribe() {
       const {
@@ -62,7 +62,7 @@ export function useInventory() {
       if (!user) return;
 
       channel = supabase
-        .channel(`inventory:${user.id}:${SESSION_ID}`)
+        .channel(`inventory:${user.id}:${sid}`)
         .on(
           "postgres_changes",
           {

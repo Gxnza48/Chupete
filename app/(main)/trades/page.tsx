@@ -66,41 +66,25 @@ export default function TradesPage() {
     const supabase = createClient();
 
     async function load() {
-      const { data } = await supabase
-        .from("listings")
-        .select(`
-          id, price_credits, sold_at,
-          inventory:inventory(float_value, user_id, item:items(name,rarity,image_url)),
-          seller:profiles!listings_seller_id_fkey(username)
-        `)
-        .eq("status", "sold")
-        .order("sold_at", { ascending: false })
-        .limit(100);
-
-      if (!data) { setLoading(false); return; }
-
-      // Fetch buyer usernames in one query using inventory.user_id
-      type RawRow = {
+      const res = await fetch("/api/trades-feed");
+      const json = await res.json();
+      const raw = (json.trades ?? []) as {
         id: string; price_credits: number; sold_at: string;
-        inventory: { float_value: number; user_id: string; item: { name: string; rarity: string; image_url: string } } | null;
-        seller: { username: string } | null;
-      };
-      const rows = data as unknown as RawRow[];
-      const buyerIds = [...new Set(rows.map((r) => r.inventory?.user_id).filter(Boolean))] as string[];
-      const { data: buyerProfiles } = buyerIds.length
-        ? await supabase.from("profiles").select("id, username").in("id", buyerIds)
-        : { data: [] };
-      const buyerMap: Record<string, string> = {};
-      for (const p of buyerProfiles ?? []) buyerMap[p.id] = p.username;
+        float_value: number;
+        item: { name: string; rarity: string; image_url: string };
+        seller: string; buyer: string;
+      }[];
 
-      const parsed: Trade[] = rows.map((r) => ({
+      if (!raw.length) { setLoading(false); return; }
+
+      const parsed: Trade[] = raw.map((r) => ({
         id: r.id,
         price_credits: r.price_credits ?? 0,
         sold_at: r.sold_at ?? "",
-        item: r.inventory?.item ?? { name: "Item", rarity: "comun", image_url: "" },
-        seller: r.seller ?? { username: "?" },
-        buyer: { username: buyerMap[r.inventory?.user_id ?? ""] ?? "?" },
-        float_value: r.inventory?.float_value ?? 0,
+        item: r.item ?? { name: "Item", rarity: "comun", image_url: "" },
+        seller: { username: r.seller ?? "?" },
+        buyer: { username: r.buyer ?? "?" },
+        float_value: r.float_value ?? 0,
       }));
 
       setTrades(parsed);
@@ -130,8 +114,8 @@ export default function TradesPage() {
     // Realtime for new sales
     const sessionId = Math.random().toString(36).slice(2);
     const ch = supabase
-      .channel(`trades-realtime:${sessionId}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "listings" }, () => load())
+      .channel(`trades-rt:${sessionId}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "listings", filter: "status=eq.sold" }, () => load())
       .subscribe();
 
     return () => { supabase.removeChannel(ch); };

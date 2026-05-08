@@ -10,6 +10,7 @@ import { RARITIES, getConditionLabel } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import RarityText from "@/components/ui/RarityText";
 import { useProfile } from "@/hooks/useProfile";
+import { useToast } from "@/components/ui/Toast";
 
 function formatCredits(n: number) {
   return n.toLocaleString("es-AR") + " cr.";
@@ -26,6 +27,7 @@ export default function BuyModal({ listing, onClose, onSuccess }: BuyModalProps)
   const [error, setError] = useState<string | null>(null);
   const [bought, setBought] = useState(false);
   const { profile, refetch } = useProfile();
+  const { addToast } = useToast();
   const router = useRouter();
 
   async function handleBuy() {
@@ -43,6 +45,21 @@ export default function BuyModal({ listing, onClose, onSuccess }: BuyModalProps)
       await refetch();
       onSuccess();
       setBought(true);
+
+      // Drop toast — same as clicker drop notification
+      const item = listing.inventory?.item;
+      if (item) {
+        addToast({
+          variant: "drop",
+          drop: {
+            item,
+            float_value: listing.inventory?.float_value ?? 0,
+            rarity: item.rarity,
+            isNewRecord: false,
+            inventory_id: listing.inventory_id,
+          },
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado.");
     } finally {
