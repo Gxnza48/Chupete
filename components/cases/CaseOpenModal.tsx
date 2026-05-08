@@ -9,6 +9,7 @@ import { RARITIES, getConditionLabel } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import { rollRarity, RARITY_COLOR, type CaseRarityEntry } from "@/lib/cases";
 import RarityText from "@/components/ui/RarityText";
+import { useToast } from "@/components/ui/Toast";
 
 const CARD_W = typeof window !== "undefined" && window.innerWidth < 480 ? 110 : 148;
 const CARD_GAP = 8;
@@ -25,7 +26,7 @@ type StripCard = {
 };
 
 export type CaseResult =
-  | { type: "item"; item: { id: string; name: string; rarity: string; image_url: string; float_value: number } }
+  | { type: "item"; item: { id: string; name: string; rarity: string; image_url: string; float_value: number; inventory_id: string } }
   | { type: "credits"; credits_won: number };
 
 export type ItemsByRarity = Record<string, { id: string; name: string; image_url: string }[]>;
@@ -141,6 +142,8 @@ export default function CaseOpenModal({ result, caseRarities, itemsByRarity, onC
   const containerRef = useRef<HTMLDivElement>(null);
   const stripX = useMotionValue(0);
   const router = useRouter();
+  const { addToast } = useToast();
+  const toastedResult = useRef<string | null>(null);
 
   const runStrip = useCallback((res: CaseResult) => {
     const newStrip = buildStrip(res, caseRarities, itemsByRarity);
@@ -164,9 +167,33 @@ export default function CaseOpenModal({ result, caseRarities, itemsByRarity, onC
   }, [caseRarities, stripX]);
 
   useEffect(() => {
-    if (!result) { setPhase("idle"); setStrip([]); return; }
+    if (!result) { setPhase("idle"); setStrip([]); toastedResult.current = null; return; }
     runStrip(result);
   }, [result, runStrip]);
+
+  useEffect(() => {
+    if (phase !== "result" || !result || result.type !== "item") return;
+    if (toastedResult.current === result.item.inventory_id) return;
+    toastedResult.current = result.item.inventory_id;
+    addToast({
+      variant: "drop",
+      drop: {
+        item: {
+          id: result.item.id,
+          name: result.item.name,
+          image_url: result.item.image_url,
+          rarity: result.item.rarity as import("@/types/database").RarityType,
+          description: null,
+          base_price_ars: 0,
+          created_at: "",
+        },
+        float_value: result.item.float_value,
+        rarity: result.item.rarity as import("@/types/database").RarityType,
+        isNewRecord: false,
+        inventory_id: result.item.inventory_id,
+      },
+    });
+  }, [phase, result, addToast]);
 
   if (!result) return null;
 
