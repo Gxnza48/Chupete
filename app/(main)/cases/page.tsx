@@ -291,9 +291,11 @@ export default function CasesPage() {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl overflow-hidden"
           style={{ background: "#060606", border: `1px solid ${dailyAvailable ? "rgba(74,154,74,0.35)" : "rgba(255,255,255,0.05)"}` }}>
-          <div className="p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
-            <DailyCaseArt available={dailyAvailable} />
-            <div className="flex-1 min-w-0">
+          <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+            <div className="flex-shrink-0 self-start sm:self-auto">
+              <DailyCaseArt available={dailyAvailable} />
+            </div>
+            <div className="flex-1 w-full min-w-0">
               <p className="font-bold text-sm mb-0.5" style={{ color: "#efefef", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
                 Caja Diaria — Gratis
               </p>

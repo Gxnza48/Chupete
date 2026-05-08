@@ -132,10 +132,10 @@ export default function Navbar() {
                   fontFamily: "var(--font-syne), Syne, sans-serif",
                 }}
               >
-                <span className="font-medium truncate max-w-[80px] sm:max-w-[140px]">{profile.username}</span>
+                <span className="font-medium truncate max-w-[70px] sm:max-w-[120px]">{profile.username}</span>
                 {profile.credits !== undefined && (
                   <span
-                    className="text-xs px-1.5 py-0.5 rounded"
+                    className="hidden sm:inline text-xs px-1.5 py-0.5 rounded"
                     style={{
                       background: "rgba(74,154,74,0.12)",
                       color: "#4a9a4a",
@@ -180,7 +180,7 @@ export default function Navbar() {
 
               {menuOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-44 rounded-xl py-1 z-50"
+                  className="absolute right-0 mt-2 w-44 rounded-xl py-1 z-50 max-w-[calc(100vw-1rem)]"
                   style={{
                     background: "#0a0a0a",
                     border: "1px solid rgba(255,255,255,0.08)",
