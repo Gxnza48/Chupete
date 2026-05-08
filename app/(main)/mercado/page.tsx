@@ -127,7 +127,7 @@ function MercadoContent() {
               key={i}
               className="rounded-xl animate-pulse"
               style={{
-                height: 240,
+                height: 290,
                 background: "#060606",
                 border: "1px solid rgba(255,255,255,0.05)",
               }}

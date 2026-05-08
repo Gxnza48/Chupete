@@ -40,8 +40,6 @@ export default function ListingCard({
       onClick={!isMine && onBuy ? () => onBuy(listing) : undefined}
       className="relative rounded-xl overflow-hidden flex flex-col"
       style={{
-        width: 160,
-        height: 240,
         background: "#060606",
         border: `1px solid ${hovered && !isMine ? glowColor + "60" : "rgba(255,255,255,0.05)"}`,
         boxShadow: hovered && !isMine ? `0 0 20px ${glowColor}20` : "none",
@@ -72,7 +70,7 @@ export default function ListingCard({
       </div>
 
       {/* Info */}
-      <div className="p-3 flex flex-col gap-1.5 flex-1">
+      <div className="p-3 flex flex-col gap-1.5">
         <p
           className="text-xs font-semibold leading-tight line-clamp-2"
           style={{
@@ -114,7 +112,7 @@ export default function ListingCard({
           </p>
         )}
 
-        <div className="mt-auto pt-2 flex flex-col gap-2">
+        <div className="pt-2 flex flex-col gap-2">
           <p
             className="font-bold text-sm"
             style={{
