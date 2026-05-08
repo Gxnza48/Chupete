@@ -97,6 +97,50 @@ body {
   animation: pulse-ring 0.6s ease-out forwards;
 }
 
+/* ─── Frame animations ───────────────────────────────────────────────────── */
+@keyframes frame-plasma-pulse {
+  0%, 100% { box-shadow: 0 0 8px #8050d080, 0 0 20px #8050d040; }
+  50%       { box-shadow: 0 0 18px #8050d0b0, 0 0 40px #8050d060; }
+}
+@keyframes frame-rainbow-hue {
+  0%   { border-color: #ff4444; box-shadow: 0 0 12px #ff444460; }
+  16%  { border-color: #ff8800; box-shadow: 0 0 12px #ff880060; }
+  33%  { border-color: #ffee00; box-shadow: 0 0 12px #ffee0060; }
+  50%  { border-color: #44ff44; box-shadow: 0 0 12px #44ff4460; }
+  66%  { border-color: #4488ff; box-shadow: 0 0 12px #4488ff60; }
+  83%  { border-color: #cc44ff; box-shadow: 0 0 12px #cc44ff60; }
+  100% { border-color: #ff4444; box-shadow: 0 0 12px #ff444460; }
+}
+@keyframes frame-glint-sweep {
+  0%   { opacity: 0; transform: translateX(-100%) rotate(25deg); }
+  20%  { opacity: 0.7; }
+  40%  { opacity: 0; transform: translateX(200%) rotate(25deg); }
+  100% { opacity: 0; transform: translateX(200%) rotate(25deg); }
+}
+.frame-plasma { border: 2px solid #8050d0 !important; animation: frame-plasma-pulse 2s ease-in-out infinite; }
+.frame-blood  { border: 2px solid #cc2222 !important; box-shadow: 0 0 14px #cc222270; }
+.frame-rainbow { border: 2px solid #ff4444 !important; animation: frame-rainbow-hue 3s linear infinite; }
+.frame-glint  { position: relative; overflow: hidden; }
+.frame-glint::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%);
+  animation: frame-glint-sweep 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ─── Particle keyframes ─────────────────────────────────────────────────── */
+@keyframes particle-float {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0.8; }
+  50%  { opacity: 1; }
+  100% { transform: translateY(-120px) translateX(var(--drift, 0px)) scale(0); opacity: 0; }
+}
+@keyframes particle-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50%       { opacity: 1; transform: scale(1.2); }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

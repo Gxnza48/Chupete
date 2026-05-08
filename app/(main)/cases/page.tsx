@@ -354,7 +354,7 @@ export default function CasesPage() {
 
       {/* Paid cases */}
       <p className="text-[11px] uppercase tracking-widest mb-3 font-semibold" style={{ color: "#2a2a2a", fontFamily: "var(--font-syne), Syne, sans-serif" }}>Colecciones</p>
-      <div className="grid gap-5 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-3" style={{ alignItems: "start" }}>
         {CASE_LIST.map((c, i) => {
           const percentages = getPercentages(c.rarities);
           const isLoading = loadingCase === c.id;

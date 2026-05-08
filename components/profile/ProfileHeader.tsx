@@ -10,6 +10,7 @@ import EditUsernameModal from "./EditUsernameModal";
 import ProfileCustomizer from "./ProfileCustomizer";
 import ShopModal from "./ShopModal";
 import { createClient } from "@/lib/supabase/client";
+import { formatNum } from "@/lib/format";
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -18,9 +19,19 @@ interface ProfileHeaderProps {
 }
 
 const FRAME_STYLES: Record<string, React.CSSProperties> = {
-  gold: { border: "2px solid #ffaa00", boxShadow: "0 0 12px #ffaa0060" },
-  neon:  { border: "2px solid #4a9a4a", boxShadow: "0 0 12px #4a9a4a60" },
-  void:  { border: "2px solid #8050d0", boxShadow: "0 0 16px #8050d080" },
+  gold:    { border: "2px solid #ffaa00", boxShadow: "0 0 12px #ffaa0060" },
+  neon:    { border: "2px solid #4a9a4a", boxShadow: "0 0 12px #4a9a4a60" },
+  void:    { border: "2px solid #8050d0", boxShadow: "0 0 16px #8050d080" },
+  // new frames applied via className — styles below are fallback
+  plasma:  {},
+  blood:   {},
+  rainbow: {},
+};
+
+const FRAME_CLASSES: Record<string, string> = {
+  plasma:  "frame-plasma frame-glint",
+  blood:   "frame-blood frame-glint",
+  rainbow: "frame-rainbow frame-glint",
 };
 
 export default function ProfileHeader({ profile, itemCount = 0, isOwner = false }: ProfileHeaderProps) {
@@ -58,8 +69,8 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
       {/* Avatar */}
       <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative">
         <div
-          className="w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #060606 100%)", border: "2px solid rgba(255,255,255,0.1)", ...(equippedFrame ? FRAME_STYLES[equippedFrame] : {}) }}
+          className={`w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center${equippedFrame && FRAME_CLASSES[equippedFrame] ? ` ${FRAME_CLASSES[equippedFrame]}` : ""}`}
+          style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #060606 100%)", border: "2px solid rgba(255,255,255,0.1)", ...(equippedFrame ? (FRAME_STYLES[equippedFrame] ?? {}) : {}) }}
         >
           {profile.avatar_url ? (
             <Image src={profile.avatar_url} alt={profile.username} width={96} height={96} className="object-cover w-full h-full" />
@@ -106,7 +117,7 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
           </div>
         )}
 
-        <p className="text-xs mt-1" style={{ color: "#2a2a2a" }}>
+        <p className="text-xs mt-1" style={{ color: "#404040" }}>
           Miembro desde {new Date(profile.created_at).toLocaleDateString("es-AR", { year: "numeric", month: "long" })}
         </p>
       </div>
@@ -132,15 +143,15 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
 
       {/* Stats row */}
       <div className="flex items-center gap-6">
-        <Stat label="Clicks" value={profile.total_clicks.toLocaleString("es-AR")} />
+        <Stat label="Clicks" value={formatNum(profile.total_clicks)} />
         <div style={{ width: "1px", height: "32px", background: "rgba(255,255,255,0.07)" }} />
-        <Stat label="Items" value={itemCount.toLocaleString("es-AR")} />
+        <Stat label="Items" value={formatNum(itemCount)} />
         <div style={{ width: "1px", height: "32px", background: "rgba(255,255,255,0.07)" }} />
         <Stat label="Nivel" value={String(level)} />
         {isOwner && profile.credits !== undefined && (
           <>
             <div style={{ width: "1px", height: "32px", background: "rgba(255,255,255,0.07)" }} />
-            <Stat label="Créditos" value={profile.credits.toLocaleString("es-AR")} />
+            <Stat label="Créditos" value={formatNum(profile.credits)} />
           </>
         )}
       </div>
@@ -168,7 +179,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="text-center">
       <p className="text-xl font-bold mb-0.5" style={{ color: "#efefef", fontFamily: "var(--font-jetbrains-mono), monospace" }}>{value}</p>
-      <p className="text-[10px] uppercase tracking-widest" style={{ color: "#2a2a2a" }}>{label}</p>
+      <p className="text-[10px] uppercase tracking-widest" style={{ color: "#606060" }}>{label}</p>
     </div>
   );
 }

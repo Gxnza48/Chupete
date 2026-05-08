@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import BadgeRow from "@/components/profile/BadgeRow";
 import PublicInventoryGrid from "@/components/profile/PublicInventoryGrid";
+import ProfileParticlesWrapper from "@/components/profile/ProfileParticlesWrapper";
 import type { Profile, InventoryItem, UserBadge } from "@/types/database";
 
 interface ProfilePageProps {
@@ -56,15 +57,15 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8" style={{ background: "#000000" }}>
-      {/* Profile header */}
+      {/* Profile header with particles */}
       <div
-        className="rounded-2xl px-6 mb-8"
-        style={{
-          background: "#060606",
-          border: "1px solid rgba(255,255,255,0.05)",
-        }}
+        className="relative rounded-2xl px-6 mb-8 overflow-hidden"
+        style={{ background: "#060606", border: "1px solid rgba(255,255,255,0.05)" }}
       >
-        <ProfileHeader profile={typedProfile} itemCount={inventoryItems.length} isOwner={isOwner} />
+        <ProfileParticlesWrapper userId={typedProfile.id} />
+        <div className="relative z-10">
+          <ProfileHeader profile={typedProfile} itemCount={inventoryItems.length} isOwner={isOwner} />
+        </div>
       </div>
 
       {/* Badges section */}

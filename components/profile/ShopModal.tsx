@@ -8,9 +8,26 @@ import type { ShopItem, ProfileCosmetic } from "@/types/database";
 import { useProfile } from "@/hooks/useProfile";
 
 const FRAME_STYLES: Record<string, React.CSSProperties> = {
-  gold: { border: "2px solid #ffaa00", boxShadow: "0 0 12px #ffaa0060" },
-  neon:  { border: "2px solid #4a9a4a", boxShadow: "0 0 12px #4a9a4a60" },
-  void:  { border: "2px solid #8050d0", boxShadow: "0 0 16px #8050d080", filter: "brightness(0.9)" },
+  gold:    { border: "2px solid #ffaa00", boxShadow: "0 0 12px #ffaa0060" },
+  neon:    { border: "2px solid #4a9a4a", boxShadow: "0 0 12px #4a9a4a60" },
+  void:    { border: "2px solid #8050d0", boxShadow: "0 0 16px #8050d080" },
+  plasma:  {},
+  blood:   {},
+  rainbow: {},
+};
+
+const FRAME_CLASSES: Record<string, string> = {
+  plasma:  "frame-plasma frame-glint",
+  blood:   "frame-blood frame-glint",
+  rainbow: "frame-rainbow frame-glint",
+};
+
+const FRAME_ICONS: Record<string, string> = {
+  gold: "★", neon: "◈", void: "◆", plasma: "◉", blood: "◆", rainbow: "◈",
+};
+
+const EFFECT_ICONS: Record<string, string> = {
+  effect_stars: "✦", effect_fire: "◈", effect_bubbles: "○",
 };
 
 interface ShopModalProps {
@@ -24,7 +41,7 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
   const [equipping, setEquipping] = useState<string | null>(null);
-  const [tab, setTab] = useState<"charm" | "frame">("charm");
+  const [tab, setTab] = useState<"charm" | "frame" | "effect">("charm");
   const { profile, refetch } = useProfile();
   const supabase = createClient();
 
@@ -106,7 +123,11 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
     fetchShop();
   }
 
-  const filtered = items.filter((i) => i.type === tab);
+  const filtered = items.filter((i) => {
+    if (tab === "effect") return i.type === "charm" && i.key.startsWith("effect_");
+    if (tab === "charm")  return i.type === "charm" && !i.key.startsWith("effect_");
+    return i.type === "frame";
+  });
 
   return (
     <AnimatePresence>
@@ -139,21 +160,21 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
 
             {/* Tabs */}
             <div className="flex mx-5 mb-4 rounded-lg p-0.5 flex-shrink-0" style={{ background: "rgba(255,255,255,0.04)" }}>
-              {(["charm", "frame"] as const).map((t) => (
+              {(["charm", "frame", "effect"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
                   className="flex-1 py-1.5 rounded-md text-xs font-medium transition-all"
                   style={{ background: tab === t ? "#efefef" : "transparent", color: tab === t ? "#000" : "#404040", fontFamily: "var(--font-syne), Syne, sans-serif" }}
                 >
-                  {t === "charm" ? "Charms" : "Marcos"}
+                  {t === "charm" ? "Charms" : t === "frame" ? "Marcos" : "Efectos"}
                 </button>
               ))}
             </div>
 
             {tab === "charm" && (
               <p className="text-[10px] text-center mb-3 flex-shrink-0" style={{ color: "#2a2a2a" }}>
-                Máx. {3 - owned.filter((o) => { const si = items.find((i) => i.id === o.shop_item_id); return si?.type === "charm" && o.equipped; }).length}/3 equipados
+                Máx. {3 - owned.filter((o) => { const si = items.find((i) => i.id === o.shop_item_id); return si?.type === "charm" && !si.key.startsWith("effect_") && o.equipped; }).length}/3 equipados
               </p>
             )}
 
@@ -181,13 +202,18 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
                         }}
                       >
                         {/* Icon preview */}
-                        <div className="flex items-center justify-center h-12">
+                        <div className="flex items-center justify-center h-14">
                           {shopItem.type === "frame" ? (
                             <div
-                              className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                              style={{ background: "#1a1a1a", ...(FRAME_STYLES[shopItem.icon] ?? {}) }}
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold${FRAME_CLASSES[shopItem.icon] ? ` ${FRAME_CLASSES[shopItem.icon]}` : ""}`}
+                              style={{ background: "#1a1a1a", ...(FRAME_STYLES[shopItem.icon] ?? {}), color: "#efefef" }}
                             >
-                              {shopItem.icon === "gold" ? "★" : shopItem.icon === "neon" ? "◈" : "◆"}
+                              {FRAME_ICONS[shopItem.icon] ?? "◆"}
+                            </div>
+                          ) : shopItem.key.startsWith("effect_") ? (
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-2xl">{EFFECT_ICONS[shopItem.key] ?? shopItem.icon}</span>
+                              <span className="text-[8px] uppercase tracking-wider" style={{ color: "#404040" }}>Partículas</span>
                             </div>
                           ) : (
                             <span className="text-3xl">{shopItem.icon}</span>
