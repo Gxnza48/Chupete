@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { X, Eye, EyeOff, ShoppingBag, Trash2, Bold, Italic, Check } from "lucide-react";
+import { X, Eye, EyeOff, ShoppingBag, Trash2, Bold, Italic, Check, Zap } from "lucide-react";
 import type { InventoryItem } from "@/types/database";
 import { RARITIES, getConditionLabel } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import RarityText from "@/components/ui/RarityText";
 import { createClient } from "@/lib/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
 import SellModal from "./SellModal";
 
 const NICKNAME_COLORS = [
@@ -29,6 +30,8 @@ export default function ItemPreviewModal({ inventoryItem, onClose, onRefetch, re
   const [showSell, setShowSell] = useState(false);
   const [confirmTrash, setConfirmTrash] = useState(false);
   const [cancellingListing, setCancellingListing] = useState(false);
+  const [equipping, setEquipping] = useState(false);
+  const { profile, refetch: refetchProfile } = useProfile();
 
   // Nickname state
   const [nickname, setNickname] = useState("");
@@ -81,6 +84,20 @@ export default function ItemPreviewModal({ inventoryItem, onClose, onRefetch, re
     setNickSaved(true);
     setTimeout(() => setNickSaved(false), 1500);
     onRefetch();
+  }
+
+  const isEquipped = profile?.equipped_chupete_id === inventoryItem?.id;
+
+  async function handleEquip() {
+    if (!inventoryItem) return;
+    setEquipping(true);
+    await fetch("/api/equip-chupete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inventory_id: isEquipped ? null : inventoryItem.id }),
+    });
+    setEquipping(false);
+    refetchProfile();
   }
 
   async function handleCancelListing() {
@@ -221,6 +238,24 @@ export default function ItemPreviewModal({ inventoryItem, onClose, onRefetch, re
                         <div className="absolute top-0.5 w-3 h-3 rounded-full transition-all" style={{ background: showInProfile ? "#4a9a4a" : "#404040", left: showInProfile ? "17px" : "2px" }} />
                       </div>
                     </button>
+
+                    {/* Equip as clicker */}
+                    {!inventoryItem.is_listed && (
+                      <button
+                        onClick={handleEquip}
+                        disabled={equipping}
+                        className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
+                        style={{
+                          background: isEquipped ? "rgba(74,154,74,0.1)" : "rgba(255,255,255,0.04)",
+                          border: `1px solid ${isEquipped ? "rgba(74,154,74,0.35)" : "rgba(255,255,255,0.08)"}`,
+                          color: isEquipped ? "#4a9a4a" : "#efefef",
+                          fontFamily: "var(--font-syne), Syne, sans-serif",
+                        }}
+                      >
+                        <Zap size={13} />
+                        {equipping ? "..." : isEquipped ? "Desequipar clicker" : "Equipar como clicker"}
+                      </button>
+                    )}
 
                     {/* Sell / Cancel */}
                     {inventoryItem.is_listed ? (

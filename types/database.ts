@@ -28,6 +28,8 @@ export interface Profile {
   xp: number;
   total_clicks: number;
   credits: number;
+  equipped_chupete_id: string | null;
+  last_daily_case_at: string | null;
   created_at: string;
   updated_at: string;
 }

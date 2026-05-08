@@ -11,6 +11,7 @@ import { calculateLevel } from "@/lib/xp";
 
 const NAV_LINKS = [
   { href: "/", label: "Clickear" },
+  { href: "/cases", label: "Cajas" },
   { href: "/inventario", label: "Inventario" },
   { href: "/mercado", label: "Mercado" },
 ];
