@@ -25,8 +25,7 @@ function timeAgo(dateStr: string): string {
   if (m < 60) return `hace ${m}m`;
   const h = Math.floor(m / 60);
   if (h < 24) return `hace ${h}h`;
-  const d = Math.floor(h / 24);
-  return `hace ${d}d`;
+  return `hace ${Math.floor(h / 24)}d`;
 }
 
 function rarityColor(rarity?: RarityKey): string {
@@ -47,25 +46,29 @@ export default function NotificacionesPage() {
       if (!user) { setLoading(false); return; }
 
       const [
-        { data: sold },
-        { data: bought },
-        { data: credits },
+        { data: soldListings },
+        { data: boughtInventory },
+        { data: creditMovements },
       ] = await Promise.all([
-        // Items I sold
+        // Listings I sold
         supabase
-          .from("transactions")
-          .select("id, price_ars, completed_at, listing:listings(inventory:inventory(item:items(name,rarity)))")
+          .from("listings")
+          .select("id, price_credits, sold_at, inventory:inventory(item:items(name,rarity))")
           .eq("seller_id", user.id)
-          .order("completed_at", { ascending: false })
+          .eq("status", "sold")
+          .order("sold_at", { ascending: false })
           .limit(50),
-        // Items I bought
+
+        // Listings I bought — found via inventory.user_id after transfer
         supabase
-          .from("transactions")
-          .select("id, price_ars, completed_at, listing:listings(inventory:inventory(item:items(name,rarity)))")
-          .eq("buyer_id", user.id)
-          .order("completed_at", { ascending: false })
-          .limit(50),
-        // Credit transactions (cases, etc.)
+          .from("listings")
+          .select("id, price_credits, sold_at, inventory:inventory!listings_inventory_id_fkey(user_id, item:items(name,rarity))")
+          .eq("status", "sold")
+          .neq("seller_id", user.id)
+          .order("sold_at", { ascending: false })
+          .limit(200),
+
+        // Credit transactions (cases, shop purchases)
         supabase
           .from("credit_transactions")
           .select("id, amount, reason, created_at")
@@ -77,65 +80,69 @@ export default function NotificacionesPage() {
 
       const all: NotifEntry[] = [];
 
-      for (const s of sold ?? []) {
-        const tx = s as unknown as { id: string; price_ars: number; completed_at: string; listing: { inventory: { item: { name: string; rarity: string } } } | null };
-        const item = tx.listing?.inventory?.item;
-        const fee = Math.ceil((tx.price_ars ?? 0) * 0.05);
+      type SoldRow = { id: string; price_credits: number; sold_at: string; inventory: { item: { name: string; rarity: string } } | null };
+      for (const s of (soldListings ?? []) as unknown as SoldRow[]) {
+        const item = s.inventory?.item;
+        const net = Math.floor((s.price_credits ?? 0) * 0.95);
         all.push({
-          id: `sold-${tx.id}`,
+          id: `sold-${s.id}`,
           type: "sold",
           title: `Vendiste ${item?.name ?? "un item"}`,
-          subtitle: `Ingresaron ${formatNum((tx.price_ars ?? 0) - fee)} cr. (después de comisión)`,
-          amount: (tx.price_ars ?? 0) - fee,
+          subtitle: `+${formatNum(net)} cr. (después de comisión 5%)`,
+          amount: net,
           amountSign: "+",
-          date: tx.completed_at,
+          date: s.sold_at,
           rarity: item?.rarity as RarityKey | undefined,
         });
       }
 
-      for (const b of bought ?? []) {
-        const tx = b as unknown as { id: string; price_ars: number; completed_at: string; listing: { inventory: { item: { name: string; rarity: string } } } | null };
-        const item = tx.listing?.inventory?.item;
+      // Filter bought: inventory.user_id must be our user
+      type BoughtRow = { id: string; price_credits: number; sold_at: string; inventory: { user_id: string; item: { name: string; rarity: string } } | null };
+      for (const b of (boughtInventory ?? []) as unknown as BoughtRow[]) {
+        if (b.inventory?.user_id !== user.id) continue;
+        const item = b.inventory?.item;
         all.push({
-          id: `bought-${tx.id}`,
+          id: `bought-${b.id}`,
           type: "bought",
           title: `Compraste ${item?.name ?? "un item"}`,
-          subtitle: `Gastaste ${formatNum(tx.price_ars ?? 0)} cr.`,
-          amount: tx.price_ars ?? 0,
+          subtitle: `-${formatNum(b.price_credits ?? 0)} cr.`,
+          amount: b.price_credits ?? 0,
           amountSign: "-",
-          date: tx.completed_at,
+          date: b.sold_at,
           rarity: item?.rarity as RarityKey | undefined,
         });
       }
 
-      for (const c of credits ?? []) {
-        const cr = c as { id: string; amount: number; reason: string; created_at: string };
-        const isCase = cr.reason?.includes("case") || cr.amount < 0;
+      type CrRow = { id: string; amount: number; reason: string; created_at: string };
+      for (const c of (creditMovements ?? []) as unknown as CrRow[]) {
+        const isCase = c.reason?.includes("case");
+        const title =
+          c.reason === "open_case" ? "Abriste una caja" :
+          c.reason === "daily_case" ? "Caja diaria" :
+          c.reason === "shop_purchase" ? "Compra en tienda" :
+          "Movimiento de créditos";
         all.push({
-          id: `cr-${cr.id}`,
+          id: `cr-${c.id}`,
           type: isCase ? "case" : "credit",
-          title: cr.reason === "open_case" ? "Abriste una caja"
-            : cr.reason === "daily_case" ? "Caja diaria"
-            : cr.reason === "shop_purchase" ? "Compra en tienda"
-            : "Movimiento de créditos",
-          subtitle: `${cr.amount > 0 ? "+" : ""}${formatNum(cr.amount)} cr.`,
-          amount: Math.abs(cr.amount),
-          amountSign: cr.amount >= 0 ? "+" : "-",
-          date: cr.created_at,
+          title,
+          subtitle: `${c.amount > 0 ? "+" : ""}${formatNum(c.amount)} cr.`,
+          amount: Math.abs(c.amount),
+          amountSign: c.amount >= 0 ? "+" : "-",
+          date: c.created_at,
         });
       }
 
       all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setEntries(all);
       setLoading(false);
-
-      // Mark as seen
       localStorage.setItem("notif_last_seen", new Date().toISOString());
     }
     load();
   }, []);
 
-  const filtered = filter === "all" ? entries : entries.filter((e) => e.type === filter || (filter === "case" && e.type === "credit"));
+  const filtered = filter === "all" ? entries : entries.filter((e) =>
+    filter === "case" ? (e.type === "case" || e.type === "credit") : e.type === filter
+  );
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -147,19 +154,16 @@ export default function NotificacionesPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
         {(["all", "sold", "bought", "case"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
+          <button key={f} onClick={() => setFilter(f)}
             className="px-4 py-1.5 rounded-full text-xs font-semibold transition-all"
             style={{
               background: filter === f ? "#efefef" : "rgba(255,255,255,0.04)",
               color: filter === f ? "#000" : "#404040",
               border: `1px solid ${filter === f ? "transparent" : "rgba(255,255,255,0.07)"}`,
               fontFamily: "var(--font-syne), Syne, sans-serif",
-            }}
-          >
+            }}>
             {f === "all" ? "Todo" : f === "sold" ? "Ventas" : f === "bought" ? "Compras" : "Cajas"}
           </button>
         ))}
@@ -171,7 +175,6 @@ export default function NotificacionesPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center py-20 gap-3">
-          <p className="text-4xl" style={{ filter: "grayscale(1) opacity(0.3)" }}>🔔</p>
           <p className="text-sm" style={{ color: "#404040" }}>Sin actividad todavía</p>
         </div>
       ) : (
@@ -179,49 +182,26 @@ export default function NotificacionesPage() {
           {filtered.map((entry, i) => {
             const color = rarityColor(entry.rarity);
             return (
-              <motion.div
-                key={entry.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
+              <motion.div key={entry.id}
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.02 }}
                 className="flex items-center gap-4 px-4 py-3.5 rounded-xl"
-                style={{
-                  background: "#060606",
-                  border: `1px solid ${entry.rarity ? color + "20" : "rgba(255,255,255,0.05)"}`,
-                }}
-              >
-                {/* Icon */}
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                  style={{
-                    background: entry.rarity ? color + "15" : "rgba(255,255,255,0.05)",
-                    color: entry.rarity ? color : (entry.amountSign === "+" ? "#4a9a4a" : "#ff6b6b"),
-                  }}
-                >
+                style={{ background: "#060606", border: `1px solid ${entry.rarity ? color + "20" : "rgba(255,255,255,0.05)"}` }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold"
+                  style={{ background: entry.rarity ? color + "15" : "rgba(255,255,255,0.05)", color: entry.amountSign === "+" ? "#4a9a4a" : "#ff6b6b" }}>
                   {entry.type === "sold" ? "↑" : entry.type === "bought" ? "↓" : entry.type === "case" ? "⊡" : "◎"}
                 </div>
-
-                {/* Text */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate" style={{ color: "#efefef", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
                     {entry.title}
                   </p>
-                  <p className="text-xs truncate" style={{ color: "#404040" }}>
-                    {entry.subtitle}
-                  </p>
+                  <p className="text-xs truncate" style={{ color: "#404040" }}>{entry.subtitle}</p>
                 </div>
-
-                {/* Amount + time */}
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-bold" style={{
-                    color: entry.amountSign === "+" ? "#4a9a4a" : "#ff6b6b",
-                    fontFamily: "var(--font-jetbrains-mono), monospace",
-                  }}>
+                  <p className="text-sm font-bold" style={{ color: entry.amountSign === "+" ? "#4a9a4a" : "#ff6b6b", fontFamily: "var(--font-jetbrains-mono), monospace" }}>
                     {entry.amountSign}{formatNum(entry.amount)} cr.
                   </p>
-                  <p className="text-[10px]" style={{ color: "#2a2a2a" }}>
-                    {timeAgo(entry.date)}
-                  </p>
+                  <p className="text-[10px]" style={{ color: "#2a2a2a" }}>{timeAgo(entry.date)}</p>
                 </div>
               </motion.div>
             );

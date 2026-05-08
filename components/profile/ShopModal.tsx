@@ -26,8 +26,15 @@ const FRAME_ICONS: Record<string, string> = {
   gold: "★", neon: "◈", void: "◆", plasma: "◉", blood: "◆", rainbow: "◈",
 };
 
-const EFFECT_ICONS: Record<string, string> = {
-  effect_stars: "✦", effect_fire: "◈", effect_bubbles: "○",
+const EFFECT_LABELS: Record<string, { icon: string; label: string }> = {
+  effect_default: { icon: "◉", label: "Default" },
+  effect_snow:    { icon: "❄", label: "Snow" },
+  effect_bubble:  { icon: "○", label: "Bubble" },
+  effect_nasa:    { icon: "✦", label: "NASA" },
+  // legacy
+  effect_stars:   { icon: "✦", label: "Estrellas" },
+  effect_fire:    { icon: "◈", label: "Fuego" },
+  effect_bubbles: { icon: "○", label: "Burbujas" },
 };
 
 interface ShopModalProps {
@@ -218,8 +225,10 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
                             </div>
                           ) : shopItem.key.startsWith("effect_") ? (
                             <div className="flex flex-col items-center gap-1">
-                              <span className="text-2xl">{EFFECT_ICONS[shopItem.key] ?? shopItem.icon}</span>
-                              <span className="text-[8px] uppercase tracking-wider" style={{ color: "#404040" }}>Partículas</span>
+                              <span className="text-2xl">{EFFECT_LABELS[shopItem.key]?.icon ?? shopItem.icon}</span>
+                              <span className="text-[9px] font-semibold" style={{ color: "#606060", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
+                                {EFFECT_LABELS[shopItem.key]?.label ?? "Partículas"}
+                              </span>
                             </div>
                           ) : (
                             <span className="text-3xl">{shopItem.icon}</span>
