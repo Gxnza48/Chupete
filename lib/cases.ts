@@ -13,6 +13,7 @@ export type CaseDefinition = {
   price_credits: number;
   emoji: string;
   accentColor: string;
+  imageUrl: string;
   rarities: CaseRarityEntry[];
 };
 
@@ -24,6 +25,7 @@ export const CASES: Record<string, CaseDefinition> = {
     price_credits: 5000,
     emoji: "",
     accentColor: "#4a7aaf",
+    imageUrl: "https://wudlmpexpazsvuxfdkcl.supabase.co/storage/v1/object/public/item-assets/albiceleste.png",
     rarities: [
       { rarity: "comun", weight: 68 },
       { rarity: "poco_comun", weight: 22 },
@@ -38,6 +40,7 @@ export const CASES: Record<string, CaseDefinition> = {
     price_credits: 25000,
     emoji: "",
     accentColor: "#8050d0",
+    imageUrl: "https://wudlmpexpazsvuxfdkcl.supabase.co/storage/v1/object/public/item-assets/bonaerense.png",
     rarities: [
       { rarity: "poco_comun", weight: 50 },
       { rarity: "medio_raro", weight: 30 },
@@ -53,6 +56,7 @@ export const CASES: Record<string, CaseDefinition> = {
     price_credits: 100000,
     emoji: "",
     accentColor: "#c8952a",
+    imageUrl: "https://wudlmpexpazsvuxfdkcl.supabase.co/storage/v1/object/public/item-assets/obelisco.png",
     rarities: [
       { rarity: "raro", weight: 50 },
       { rarity: "ultra_raro", weight: 30 },

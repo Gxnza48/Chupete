@@ -32,32 +32,7 @@ function Countdown({ nextOpenAt }: { nextOpenAt: string }) {
   return <span style={{ fontFamily: "var(--font-jetbrains-mono), monospace" }}>{t}</span>;
 }
 
-/* ─── Case SVG art ───────────────────────────────────────────────────────── */
-function CaseArt({ accentColor, size = 120 }: { accentColor: string; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 120 120" fill="none">
-      <rect x="10" y="30" width="100" height="76" rx="8" fill={accentColor + "12"} stroke={accentColor + "40"} strokeWidth="1.5" />
-      <rect x="10" y="30" width="100" height="18" rx="8" fill={accentColor + "20"} stroke={accentColor + "40"} strokeWidth="1.5" />
-      <rect x="44" y="22" width="32" height="14" rx="4" fill={accentColor + "18"} stroke={accentColor + "35"} strokeWidth="1.5" />
-      <rect x="48" y="57" width="24" height="3" rx="1.5" fill={accentColor + "60"} />
-      <rect x="52" y="64" width="16" height="3" rx="1.5" fill={accentColor + "40"} />
-      <circle cx="60" cy="75" r="6" fill={accentColor + "15"} stroke={accentColor + "50"} strokeWidth="1.5" />
-      <circle cx="60" cy="75" r="2.5" fill={accentColor + "80"} />
-    </svg>
-  );
-}
-
-function DailyCaseArt({ available }: { available: boolean }) {
-  const color = available ? "#4a9a4a" : "#404040";
-  return (
-    <svg width={52} height={52} viewBox="0 0 120 120" fill="none">
-      <rect x="10" y="30" width="100" height="76" rx="8" fill={color + "12"} stroke={color + "40"} strokeWidth="1.5" />
-      <rect x="10" y="30" width="100" height="18" rx="8" fill={color + "20"} stroke={color + "40"} strokeWidth="1.5" />
-      <rect x="44" y="22" width="32" height="14" rx="4" fill={color + "18"} stroke={color + "35"} strokeWidth="1.5" />
-      <path d="M50 67 L60 57 L70 67 L60 77 Z" fill={color + "50"} stroke={color + "70"} strokeWidth="1" />
-    </svg>
-  );
-}
+const DAILY_IMAGE = "https://wudlmpexpazsvuxfdkcl.supabase.co/storage/v1/object/public/item-assets/daily.png";
 
 /* ─── Drops preview section ──────────────────────────────────────────────── */
 function DropsPreview({ rarities, itemsByRarity }: { rarities: CaseRarityEntry[]; itemsByRarity: ItemsByRarity }) {
@@ -294,7 +269,14 @@ export default function CasesPage() {
           style={{ background: "#060606", border: `1px solid ${dailyAvailable ? "rgba(74,154,74,0.35)" : "rgba(255,255,255,0.05)"}` }}>
           <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
             <div className="flex-shrink-0 self-start sm:self-auto">
-              <DailyCaseArt available={dailyAvailable} />
+              <Image
+                src={DAILY_IMAGE}
+                alt="Caja Diaria"
+                width={64}
+                height={64}
+                className="object-contain"
+                style={{ opacity: dailyAvailable ? 1 : 0.35 }}
+              />
             </div>
             <div className="flex-1 w-full min-w-0">
               <p className="font-bold text-sm mb-0.5" style={{ color: "#efefef", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
@@ -374,7 +356,13 @@ export default function CasesPage() {
               {/* Case art */}
               <div className="relative flex flex-col items-center justify-center py-8 gap-2"
                 style={{ background: `linear-gradient(145deg, ${c.accentColor}10 0%, transparent 80%)` }}>
-                <CaseArt accentColor={c.accentColor} size={100} />
+                <Image
+                  src={c.imageUrl}
+                  alt={c.name}
+                  width={120}
+                  height={120}
+                  className="object-contain"
+                />
                 <p className="text-[10px] uppercase tracking-widest font-semibold"
                   style={{ color: c.accentColor + "aa", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
                   {c.description}
