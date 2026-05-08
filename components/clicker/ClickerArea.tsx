@@ -210,7 +210,15 @@ function ClickerContent() {
             height={220}
             priority
             draggable={false}
-            style={{ mixBlendMode: equippedItem ? "screen" : "normal" }}
+            style={{
+              mixBlendMode: "screen",
+              maskImage: equippedItem
+                ? "radial-gradient(circle at center, black 45%, transparent 72%)"
+                : undefined,
+              WebkitMaskImage: equippedItem
+                ? "radial-gradient(circle at center, black 45%, transparent 72%)"
+                : undefined,
+            }}
           />
         </motion.div>
 
