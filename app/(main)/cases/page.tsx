@@ -272,8 +272,8 @@ export default function CasesPage() {
               <Image
                 src={DAILY_IMAGE}
                 alt="Caja Diaria"
-                width={64}
-                height={64}
+                width={88}
+                height={88}
                 className="object-contain"
                 style={{ opacity: dailyAvailable ? 1 : 0.35 }}
               />
@@ -359,8 +359,8 @@ export default function CasesPage() {
                 <Image
                   src={c.imageUrl}
                   alt={c.name}
-                  width={120}
-                  height={120}
+                  width={160}
+                  height={160}
                   className="object-contain"
                 />
                 <p className="text-[10px] uppercase tracking-widest font-semibold"
