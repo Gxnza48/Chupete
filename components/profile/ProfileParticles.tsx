@@ -1,102 +1,93 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import Particles, { initParticlesEngine } from "@tsparticles/react";
-import { loadSlim } from "@tsparticles/slim";
-import type { ISourceOptions } from "@tsparticles/engine";
+import { useEffect, useState } from "react";
 
 export type ParticleEffect = "effect_stars" | "effect_fire" | "effect_bubbles";
 
-const CONFIGS: Record<ParticleEffect, ISourceOptions> = {
+type Particle = {
+  id: string;
+  x: number;
+  startY: number;
+  size: number;
+  delay: number;
+  duration: number;
+  color: string;
+  anim: string;
+  round: boolean;
+};
+
+const CFG = {
   effect_stars: {
-    fullScreen: { enable: false },
-    background: { color: { value: "transparent" } },
-    particles: {
-      number: { value: 50 },
-      color: { value: ["#ffffff", "#ffeedd", "#aaddff"] },
-      shape: { type: "circle" },
-      opacity: { value: { min: 0.1, max: 0.7 }, animation: { enable: true, speed: 0.8, sync: false } },
-      size: { value: { min: 1, max: 3 } },
-      move: { enable: true, speed: 0.3, direction: "none", random: true, outModes: "out" },
-      twinkle: { particles: { enable: true, frequency: 0.05, opacity: 1, color: { value: "#ffffff" } } },
-    },
-    interactivity: { events: {} },
+    count: 22, anim: "particle-twinkle", round: false,
+    sizeRange: [2, 4] as [number, number], durRange: [3, 7] as [number, number],
+    colors: ["#ffffff", "#ffffffbb", "#ffeedd", "#99ddff"],
+    startFromBottom: false,
   },
   effect_fire: {
-    fullScreen: { enable: false },
-    background: { color: { value: "transparent" } },
-    particles: {
-      number: { value: 40 },
-      color: { value: ["#ff2200", "#ff6600", "#ff9900", "#ffcc00"] },
-      shape: { type: "circle" },
-      opacity: { value: { min: 0.2, max: 0.8 }, animation: { enable: true, speed: 2, sync: false, startValue: "max", destroy: "min" } },
-      size: { value: { min: 3, max: 8 }, animation: { enable: true, speed: 5, sync: false, startValue: "max", destroy: "min" } },
-      move: {
-        enable: true, speed: { min: 2, max: 5 }, direction: "top",
-        random: true, straight: false, outModes: "out",
-      },
-      life: { duration: { value: { min: 0.5, max: 1.5 }, sync: false }, count: 0 },
-    },
-    interactivity: { events: {} },
+    count: 28, anim: "particle-rise", round: true,
+    sizeRange: [5, 9] as [number, number], durRange: [2, 4] as [number, number],
+    colors: ["rgba(255,60,0,0.8)", "rgba(255,110,0,0.8)", "rgba(255,180,0,0.7)"],
+    startFromBottom: true,
   },
   effect_bubbles: {
-    fullScreen: { enable: false },
-    background: { color: { value: "transparent" } },
-    particles: {
-      number: { value: 25 },
-      color: { value: ["#c8952a", "#ffd700", "#ffaa00"] },
-      shape: { type: "circle" },
-      opacity: { value: { min: 0.2, max: 0.5 } },
-      size: { value: { min: 4, max: 12 } },
-      stroke: { width: 1, color: { value: "#c8952a" } },
-      move: { enable: true, speed: 1.2, direction: "top", random: true, outModes: "out" },
-    },
-    interactivity: { events: {} },
+    count: 16, anim: "particle-bubble", round: true,
+    sizeRange: [7, 16] as [number, number], durRange: [5, 9] as [number, number],
+    colors: ["rgba(200,149,42,0.4)", "rgba(255,200,0,0.35)", "rgba(200,160,50,0.45)"],
+    startFromBottom: true,
   },
 };
 
-function mergeConfigs(effects: ParticleEffect[]): ISourceOptions {
-  if (effects.length === 1) return CONFIGS[effects[0]];
-  // Merge particle counts and combine colors
-  const all = effects.flatMap((e) => {
-    const cfg = CONFIGS[e];
-    return (cfg.particles?.color as { value: string[] })?.value ?? ["#ffffff"];
-  });
-  const base = CONFIGS[effects[0]];
-  return {
-    ...base,
-    particles: {
-      ...base.particles,
-      number: { value: effects.length * 30 },
-      color: { value: all },
-    },
-  };
+function gen(effect: ParticleEffect): Particle[] {
+  const c = CFG[effect];
+  return Array.from({ length: c.count }, (_, i) => ({
+    id: `${effect}-${i}`,
+    x: Math.random() * 98,
+    startY: c.startFromBottom ? Math.random() * 20 : Math.random() * 90,
+    size: c.sizeRange[0] + Math.random() * (c.sizeRange[1] - c.sizeRange[0]),
+    delay: Math.random() * 6,
+    duration: c.durRange[0] + Math.random() * (c.durRange[1] - c.durRange[0]),
+    color: c.colors[Math.floor(Math.random() * c.colors.length)],
+    anim: c.anim,
+    round: c.round,
+  }));
 }
 
 export default function ProfileParticles({ effects }: { effects: ParticleEffect[] }) {
-  const [ready, setReady] = useState(false);
+  const [particles, setParticles] = useState<Particle[]>([]);
 
-  useEffect(() => {
-    initParticlesEngine(async (engine) => {
-      await loadSlim(engine);
-    }).then(() => setReady(true));
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setParticles(effects.flatMap(gen)); }, [effects.join(",")]);
 
-  const particlesLoaded = useCallback(async () => {}, []);
-
-  if (!ready || !effects.length) return null;
+  if (!particles.length) return null;
 
   return (
-    <Particles
-      id={`profile-particles-${effects.join("-")}`}
-      particlesLoaded={particlesLoaded}
-      options={mergeConfigs(effects)}
+    <div
+      aria-hidden
       style={{
-        position: "absolute",
-        inset: 0,
-        zIndex: 0,
-        pointerEvents: "none",
+        position: "absolute", inset: 0,
+        overflow: "hidden", pointerEvents: "none",
+        zIndex: 0, borderRadius: "inherit",
       }}
-    />
+    >
+      {particles.map((p) => (
+        <span
+          key={p.id}
+          style={{
+            position: "absolute",
+            left: `${p.x}%`,
+            ...(CFG[effects[0]]?.startFromBottom === false
+              ? { top: `${p.startY}%` }
+              : { bottom: `${p.startY}%` }),
+            width: p.size,
+            height: p.size,
+            borderRadius: p.round ? "50%" : "2px",
+            background: p.round && p.anim === "particle-bubble" ? "transparent" : p.color,
+            border: p.anim === "particle-bubble" ? `1.5px solid ${p.color}` : undefined,
+            animation: `${p.anim} ${p.duration}s ease-in-out ${p.delay}s infinite`,
+            display: "block",
+          }}
+        />
+      ))}
+    </div>
   );
 }

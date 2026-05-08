@@ -34,6 +34,23 @@ const FRAME_CLASSES: Record<string, string> = {
   rainbow: "frame-rainbow frame-glint",
 };
 
+function getLevelAvatarStyle(level: number, hasFrame: boolean): { borderStyle: React.CSSProperties; className: string } {
+  if (hasFrame) return { borderStyle: {}, className: "" };
+  if (level >= 100) return { borderStyle: {}, className: "frame-rainbow frame-glint" };
+  if (level >= 50) return { borderStyle: {}, className: "frame-plasma" };
+  if (level >= 25) return { borderStyle: { border: "2px solid #c8952a", boxShadow: "0 0 14px #c8952a70" }, className: "" };
+  if (level >= 10) return { borderStyle: { border: "2px solid #4a9a4a", boxShadow: "0 0 10px #4a9a4a50" }, className: "" };
+  return { borderStyle: { border: "2px solid rgba(255,255,255,0.1)" }, className: "" };
+}
+
+function getLevelBadgeStyle(level: number): React.CSSProperties {
+  if (level >= 100) return { background: "linear-gradient(135deg, #ff4444, #ff8800)", color: "#fff", fontWeight: "bold" };
+  if (level >= 50)  return { background: "#8050d0", color: "#fff", boxShadow: "0 0 8px #8050d060" };
+  if (level >= 25)  return { background: "#c8952a", color: "#fff", boxShadow: "0 0 6px #c8952a60" };
+  if (level >= 10)  return { background: "#4a9a4a", color: "#fff" };
+  return { background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.12)", color: "#efefef" };
+}
+
 export default function ProfileHeader({ profile, itemCount = 0, isOwner = false }: ProfileHeaderProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
@@ -64,13 +81,26 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
 
   const usernameColor = profile.username_color ?? "#efefef";
 
+  const hasEquippedFrame = !!equippedFrame;
+  const { borderStyle, className: levelClass } = getLevelAvatarStyle(level, hasEquippedFrame);
+  const badgeStyle = getLevelBadgeStyle(level);
+  const avatarClass = equippedFrame && FRAME_CLASSES[equippedFrame]
+    ? FRAME_CLASSES[equippedFrame]
+    : levelClass;
+  const avatarBorderStyle = equippedFrame
+    ? (FRAME_STYLES[equippedFrame] ?? {})
+    : borderStyle;
+
+  // Only non-effect charms shown on avatar (effects are particles)
+  const decorCharms = equippedCharms.filter((c) => !c.shop_item?.key?.startsWith("effect_"));
+
   return (
     <div className="flex flex-col items-center gap-6 py-8" style={{ background: bannerBg, borderRadius: "inherit" }}>
       {/* Avatar */}
       <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative">
         <div
-          className={`w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center${equippedFrame && FRAME_CLASSES[equippedFrame] ? ` ${FRAME_CLASSES[equippedFrame]}` : ""}`}
-          style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #060606 100%)", border: "2px solid rgba(255,255,255,0.1)", ...(equippedFrame ? (FRAME_STYLES[equippedFrame] ?? {}) : {}) }}
+          className={`w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center${avatarClass ? ` ${avatarClass}` : ""}`}
+          style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #060606 100%)", ...avatarBorderStyle }}
         >
           {profile.avatar_url ? (
             <Image src={profile.avatar_url} alt={profile.username} width={96} height={96} className="object-cover w-full h-full" />
@@ -80,12 +110,25 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
             </div>
           )}
         </div>
+
+        {/* Level badge */}
         <div
           className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-lg text-xs font-bold"
-          style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.12)", color: "#efefef", fontFamily: "var(--font-jetbrains-mono), monospace" }}
+          style={{ fontFamily: "var(--font-jetbrains-mono), monospace", ...badgeStyle }}
         >
           Nv.{level}
         </div>
+
+        {/* First charm — top-right corner of avatar */}
+        {decorCharms[0]?.shop_item?.icon && (
+          <div
+            className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-base"
+            style={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.15)", boxShadow: "0 2px 8px rgba(0,0,0,0.5)" }}
+            title={decorCharms[0].shop_item.name}
+          >
+            {decorCharms[0].shop_item.icon}
+          </div>
+        )}
       </motion.div>
 
       {/* Username */}
@@ -106,11 +149,11 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
         </div>
         <EditUsernameModal currentUsername={profile.username} isOpen={editOpen} onClose={() => setEditOpen(false)} />
 
-        {/* Equipped charms */}
-        {equippedCharms.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-1">
-            {equippedCharms.map((c) => (
-              <span key={c.shop_item_id} className="text-base" title={c.shop_item?.name}>
+        {/* Extra charms (2nd, 3rd) shown as small pills under username */}
+        {decorCharms.length > 1 && (
+          <div className="flex items-center gap-1.5 mt-1.5">
+            {decorCharms.slice(1).map((c) => (
+              <span key={c.shop_item_id} className="text-sm" title={c.shop_item?.name}>
                 {c.shop_item?.icon}
               </span>
             ))}

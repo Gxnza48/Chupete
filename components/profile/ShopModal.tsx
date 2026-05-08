@@ -91,31 +91,37 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
     const shopItem = items.find((i) => i.id === cosmetic.shop_item_id);
     if (!shopItem) { setEquipping(null); return; }
 
+    const isCurrentlyEquipped = equippedIds.has(cosmetic.shop_item_id);
+
     if (shopItem.type === "frame") {
-      // Unequip all frames first
+      // Only 1 frame at a time
       const frameIds = owned.filter((o) => {
         const si = items.find((i) => i.id === o.shop_item_id);
-        return si?.type === "frame";
+        return si?.type === "frame" && o.equipped;
       }).map((o) => o.shop_item_id);
-
       for (const fid of frameIds) {
         await supabase.from("profile_cosmetics").update({ equipped: false }).eq("user_id", user.id).eq("shop_item_id", fid);
       }
-
-      const isCurrentlyEquipped = equippedIds.has(cosmetic.shop_item_id);
       await supabase.from("profile_cosmetics").update({ equipped: !isCurrentlyEquipped }).eq("user_id", user.id).eq("shop_item_id", cosmetic.shop_item_id);
+
+    } else if (shopItem.key.startsWith("effect_")) {
+      // Only 1 effect at a time
+      const effectIds = owned.filter((o) => {
+        const si = items.find((i) => i.id === o.shop_item_id);
+        return si?.key?.startsWith("effect_") && o.equipped;
+      }).map((o) => o.shop_item_id);
+      for (const eid of effectIds) {
+        await supabase.from("profile_cosmetics").update({ equipped: false }).eq("user_id", user.id).eq("shop_item_id", eid);
+      }
+      await supabase.from("profile_cosmetics").update({ equipped: !isCurrentlyEquipped }).eq("user_id", user.id).eq("shop_item_id", cosmetic.shop_item_id);
+
     } else {
       // Charms: max 3 equipped
-      const equippedCharms = owned.filter((o) => {
+      const equippedCharmCount = owned.filter((o) => {
         const si = items.find((i) => i.id === o.shop_item_id);
-        return si?.type === "charm" && o.equipped;
-      });
-      const isCurrentlyEquipped = equippedIds.has(cosmetic.shop_item_id);
-
-      if (!isCurrentlyEquipped && equippedCharms.length >= 3) {
-        setEquipping(null);
-        return;
-      }
+        return si?.type === "charm" && !si?.key?.startsWith("effect_") && o.equipped;
+      }).length;
+      if (!isCurrentlyEquipped && equippedCharmCount >= 3) { setEquipping(null); return; }
       await supabase.from("profile_cosmetics").update({ equipped: !isCurrentlyEquipped }).eq("user_id", user.id).eq("shop_item_id", cosmetic.shop_item_id);
     }
 
