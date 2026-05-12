@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import Image from "next/image";
 import type { InventoryItem } from "@/types/database";
-import { RARITIES, getConditionLabel, formatARS } from "@/lib/rarities";
+import { RARITIES, getConditionLabel } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 interface SellModalProps {
   inventoryItem: InventoryItem | null;
   onClose: () => void;
@@ -117,17 +117,7 @@ export default function SellModal({
                 border: `1px solid ${glowColor}30`,
               }}
             >
-              {item.image_url ? (
-                <Image
-                  src={item.image_url}
-                  alt={item.name}
-                  width={56}
-                  height={56}
-                  className="object-contain" style={{ mixBlendMode: "screen" }}
-                />
-              ) : (
-                <span className="text-3xl">🎁</span>
-              )}
+              <ItemSVG name={item.name} rarity={item.rarity} size={56} />
             </div>
             <div>
               <p className="font-semibold text-sm mb-0.5" style={{ color: "#efefef" }}>

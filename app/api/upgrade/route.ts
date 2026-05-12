@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get a random item of target rarity
-    const { data: targetItems } = await admin.from("items").select("id, name, rarity, image_url").eq("rarity", target_rarity);
+    const { data: targetItems } = await admin.from("items").select("id, name, rarity").eq("rarity", target_rarity);
     if (!targetItems || targetItems.length === 0) {
       return NextResponse.json({ error: "No hay items de esa rareza disponibles." }, { status: 500 });
     }

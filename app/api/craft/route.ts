@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const resultRarity = rollCraft(outcome);
 
     // Get a random item of result rarity
-    const { data: targetItems } = await admin.from("items").select("id, name, rarity, image_url").eq("rarity", resultRarity);
+    const { data: targetItems } = await admin.from("items").select("id, name, rarity").eq("rarity", resultRarity);
     if (!targetItems || targetItems.length === 0) {
       return NextResponse.json({ error: "No hay items de esa rareza." }, { status: 500 });
     }

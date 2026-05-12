@@ -13,7 +13,7 @@ export interface Item {
   name: string;
   rarity: RarityType;
   description: string | null;
-  image_url: string;
+  image_url?: string;
   base_price_ars: number;
   created_at: string;
   available_from?: string | null;

@@ -46,3 +46,13 @@ tsc-errors.txt
 
 # supabase local state
 supabase/.temp/
+
+# script run artifacts
+scripts/generacion_log.json
+scripts/generacion_output.log
+
+# local image-gen scripts (contain hardcoded API tokens / Supabase service role)
+scripts/gen-images-horde.mjs
+scripts/gen-images-pollinations.mjs
+scripts/gen-images-replicate.mjs
+scripts/gen-svgs.mjs

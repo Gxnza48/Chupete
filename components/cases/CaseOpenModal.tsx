@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { motion, useMotionValue, animate, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { X, Package } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { RARITIES, getConditionLabel } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import { rollRarity, RARITY_COLOR, type CaseRarityEntry } from "@/lib/cases";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 import { useToast } from "@/components/ui/Toast";
 import { startSpinTick, playCaseResult } from "@/lib/sounds";
 
@@ -34,15 +34,14 @@ type StripCard = {
   rarity: RarityKey;
   isWinner: boolean;
   itemName?: string;
-  imageUrl?: string;
   credits?: number;
 };
 
 export type CaseResult =
-  | { type: "item"; item: { id: string; name: string; rarity: string; image_url: string; float_value: number; inventory_id: string } }
+  | { type: "item"; item: { id: string; name: string; rarity: string; float_value: number; inventory_id: string } }
   | { type: "credits"; credits_won: number };
 
-export type ItemsByRarity = Record<string, { id: string; name: string; image_url: string }[]>;
+export type ItemsByRarity = Record<string, { id: string; name: string }[]>;
 
 interface Props {
   result: CaseResult | null;
@@ -54,22 +53,22 @@ interface Props {
 
 function pickItem(rarity: RarityKey, itemsByRarity: ItemsByRarity) {
   const pool = itemsByRarity[rarity] ?? [];
-  if (!pool.length) return { name: undefined, imageUrl: undefined };
+  if (!pool.length) return { name: undefined };
   const item = pool[Math.floor(Math.random() * pool.length)];
-  return { name: item.name, imageUrl: item.image_url };
+  return { name: item.name };
 }
 
 function buildStrip(result: CaseResult, rarities: CaseRarityEntry[], itemsByRarity: ItemsByRarity): StripCard[] {
   return Array.from({ length: STRIP_SIZE }, (_, i) => {
     if (i === WINNER_IDX) {
       if (result.type === "item") {
-        return { rarity: result.item.rarity as RarityKey, isWinner: true, itemName: result.item.name, imageUrl: result.item.image_url };
+        return { rarity: result.item.rarity as RarityKey, isWinner: true, itemName: result.item.name };
       }
       return { rarity: "comun", isWinner: true, credits: result.credits_won };
     }
     const rarity = rollRarity(rarities);
-    const { name, imageUrl } = pickItem(rarity, itemsByRarity);
-    return { rarity, isWinner: false, itemName: name, imageUrl };
+    const { name } = pickItem(rarity, itemsByRarity);
+    return { rarity, isWinner: false, itemName: name };
   });
 }
 
@@ -105,12 +104,11 @@ function StripCardEl({ card, phase }: { card: StripCard; phase: string }) {
             {card.credits.toLocaleString("es-AR")}<span className="text-xs ml-0.5">cr.</span>
           </span>
         ) : (
-          <Image
-            src={card.imageUrl ?? "/items/chupete-basico.svg"}
-            alt={card.itemName ?? card.rarity}
-            width={100} height={100}
-            className="object-contain"
-            style={{ mixBlendMode: "screen", filter: `drop-shadow(0 0 8px ${color}50)`, maskImage: "radial-gradient(circle at center, black 48%, transparent 74%)", WebkitMaskImage: "radial-gradient(circle at center, black 48%, transparent 74%)" }}
+          <ItemSVG
+            name={card.itemName ?? "Chupete"}
+            rarity={card.rarity}
+            size={100}
+            style={{ filter: `drop-shadow(0 0 8px ${color}50)` }}
           />
         )}
         {highlight && (
@@ -276,7 +274,7 @@ export default function CaseOpenModal({ result, caseRarities, itemsByRarity, onC
     addToast({
       variant: "drop",
       drop: {
-        item: { id: result.item.id, name: result.item.name, image_url: result.item.image_url, rarity: result.item.rarity as import("@/types/database").RarityType, description: null, base_price_ars: 0, created_at: "" },
+        item: { id: result.item.id, name: result.item.name, rarity: result.item.rarity as import("@/types/database").RarityType, description: null, base_price_ars: 0, created_at: "" },
         float_value: result.item.float_value,
         rarity: result.item.rarity as import("@/types/database").RarityType,
         isNewRecord: false,

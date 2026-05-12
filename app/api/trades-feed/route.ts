@@ -28,7 +28,7 @@ export async function GET() {
   const [{ data: inventories }, { data: sellers }] = await Promise.all([
     admin
       .from("inventory")
-      .select("id, float_value, user_id, item:items(name, rarity, image_url)")
+      .select("id, float_value, user_id, item:items(name, rarity)")
       .in("id", inventoryIds),
     admin
       .from("profiles")
@@ -36,7 +36,7 @@ export async function GET() {
       .in("id", sellerIds),
   ]);
 
-  const invMap: Record<string, { float_value: number; user_id: string; item: { name: string; rarity: string; image_url: string } }> = {};
+  const invMap: Record<string, { float_value: number; user_id: string; item: { name: string; rarity: string } }> = {};
   for (const inv of inventories ?? []) invMap[inv.id] = inv as unknown as typeof invMap[string];
 
   const sellerMap: Record<string, string> = {};
@@ -56,7 +56,7 @@ export async function GET() {
       price_credits: l.price_credits,
       sold_at: l.sold_at,
       float_value: inv?.float_value ?? 0,
-      item: inv?.item ?? { name: "Item", rarity: "comun", image_url: "" },
+      item: inv?.item ?? { name: "Item", rarity: "comun" },
       seller: sellerMap[l.seller_id] ?? "?",
       buyer: buyerMap[inv?.user_id ?? ""] ?? "?",
     };

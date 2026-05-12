@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { useInventory } from "@/hooks/useInventory";
 import { useProfile } from "@/hooks/useProfile";
 import { RARITIES, type RarityKey, getConditionLabel } from "@/lib/rarities";
@@ -11,6 +10,7 @@ import { startSpinTick, playUpgradeWin, playUpgradeLose } from "@/lib/sounds";
 import { useToast } from "@/components/ui/Toast";
 import type { RarityType } from "@/types/database";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 import type { InventoryItem } from "@/types/database";
 
 // ── Wheel geometry ────────────────────────────────────────────────────────────
@@ -110,8 +110,8 @@ function ItemMini({ inv, selected, onClick }: { inv: InventoryItem; selected: bo
       }}
     >
       <div className="w-10 h-10 flex items-center justify-center rounded-lg overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
-        {inv.item?.image_url
-          ? <Image src={inv.item.image_url} alt={inv.item.name} width={40} height={40} className="object-contain" style={{ mixBlendMode: "screen" }} />
+        {inv.item
+          ? <ItemSVG name={inv.item.name} rarity={inv.item.rarity} size={40} glow={false} />
           : <span className="text-xl">🎁</span>}
       </div>
       <p className="text-[9px] truncate w-full text-center leading-tight" style={{ color: "#909090", fontFamily: "var(--font-syne), Syne, sans-serif" }}>{inv.item?.name}</p>
@@ -124,7 +124,7 @@ function ItemMini({ inv, selected, onClick }: { inv: InventoryItem; selected: bo
 type UpgradeResult = {
   success: boolean;
   target_rarity: RarityKey;
-  item?: { name: string; rarity: string; image_url: string; float_value: number; inventory_id?: string };
+  item?: { name: string; rarity: string; float_value: number; inventory_id?: string };
 };
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -181,7 +181,6 @@ export default function UpgradePage() {
                 name: data.item.name,
                 rarity: data.item.rarity as RarityType,
                 description: null,
-                image_url: data.item.image_url,
                 base_price_ars: 0,
                 created_at: "",
               },
@@ -229,9 +228,7 @@ export default function UpgradePage() {
               }}
             >
               <div className="w-20 h-20 flex items-center justify-center rounded-xl overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
-                {selected.item.image_url
-                  ? <Image src={selected.item.image_url} alt={selected.item.name} width={80} height={80} className="object-contain" style={{ mixBlendMode: "screen" }} />
-                  : <span className="text-4xl">🎁</span>}
+                <ItemSVG name={selected.item.name} rarity={selected.item.rarity} size={80} glow={false} />
               </div>
               <div className="text-center">
                 <p className="text-xs font-semibold mb-0.5" style={{ color: "#efefef", fontFamily: "var(--font-syne), Syne, sans-serif" }}>{selected.item.name}</p>

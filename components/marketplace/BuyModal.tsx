@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { CreditCard, X, CheckCircle, Package } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Listing } from "@/types/database";
 import { RARITIES, getConditionLabel } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/components/ui/Toast";
 
@@ -156,11 +156,7 @@ export default function BuyModal({ listing, onClose, onSuccess }: BuyModalProps)
                   className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
                   style={{ background: `linear-gradient(135deg, ${glowColor}15, #080808)`, border: `1px solid ${glowColor}30` }}
                 >
-                  {item.image_url ? (
-                    <Image src={item.image_url} alt={item.name} width={64} height={64} className="object-contain" style={{ mixBlendMode: "screen" }} />
-                  ) : (
-                    <span className="text-3xl">🎁</span>
-                  )}
+                  <ItemSVG name={item.name} rarity={item.rarity} size={64} />
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-sm mb-0.5" style={{ color: "#efefef" }}>{item.name}</p>

@@ -66,7 +66,7 @@ export async function POST() {
 
     // Roll item
     const rarity = rollRarity(DAILY_RARITIES);
-    const { data: items } = await admin.from("items").select("id, name, rarity, image_url").eq("rarity", rarity);
+    const { data: items } = await admin.from("items").select("id, name, rarity").eq("rarity", rarity);
 
     if (!items || items.length === 0) {
       // Fallback to credits

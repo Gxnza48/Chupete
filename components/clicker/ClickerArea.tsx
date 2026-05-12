@@ -5,17 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { useClickerContext } from "./ClickerContext";
 import { useProfile } from "@/hooks/useProfile";
-import Image from "next/image";
 import type { RarityKey } from "@/lib/rarities";
 import { RARITIES } from "@/lib/rarities";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 import { playClick } from "@/lib/sounds";
 
 const LEGENDARY_RARITIES = ["legendario", "extraterrestre", "en_el_ort"];
 
 type EquippedItem = {
   id: string;
-  image_url: string;
   name: string;
   rarity: RarityKey;
   durability: number | null;
@@ -155,16 +154,15 @@ function ClickerContent() {
       // Always fetch basic item info
       const { data } = await supabase
         .from("inventory")
-        .select("id, item:items(name, image_url, rarity)")
+        .select("id, item:items(name, rarity)")
         .eq("id", profile.equipped_chupete_id)
         .maybeSingle();
 
       if (!data?.item) { setEquippedItem(null); setLocalDurability(null); return; }
 
-      const item = data.item as unknown as { name: string; image_url: string; rarity: string };
+      const item = data.item as unknown as { name: string; rarity: string };
       setEquippedItem({
         id: data.id,
-        image_url: item.image_url,
         name: item.name,
         rarity: item.rarity as RarityKey,
         durability: null,
@@ -296,8 +294,8 @@ function ClickerContent() {
     );
   }
 
-  const imageUrl = equippedItem?.image_url || "/items/chupete-basico.svg";
-  const imageName = equippedItem?.name || "Chupete Básico";
+  const displayName = equippedItem?.name || "Chupete Básico";
+  const displayRarity: RarityKey = equippedItem?.rarity || "comun";
 
   return (
     <div className="flex flex-col items-center gap-6 w-full">
@@ -309,7 +307,7 @@ function ClickerContent() {
           style={{ background: glowColor + "12", border: `1px solid ${glowColor}30` }}
         >
           <div className="w-4 h-4 rounded-full overflow-hidden flex-shrink-0">
-            <Image src={imageUrl} alt={imageName} width={16} height={16} className="object-contain" style={{ mixBlendMode: "screen" }} />
+            <ItemSVG name={displayName} rarity={displayRarity} size={16} glow={false} />
           </div>
           <RarityText rarity={equippedItem.rarity} className="text-[10px]" />
           <span className="text-[10px]" style={{ color: "#2a2a2a" }}>{equippedItem.name}</span>
@@ -380,14 +378,11 @@ function ClickerContent() {
               transition: "filter 0.2s",
             }}
           >
-            <Image
-              src={imageUrl} alt={imageName} width={220} height={220} priority draggable={false}
+            <ItemSVG
+              name={displayName}
+              rarity={displayRarity}
+              size={220}
               className="w-[min(220px,75vw)] h-[min(220px,75vw)]"
-              style={{
-                mixBlendMode: "screen",
-                maskImage: equippedItem ? "radial-gradient(circle at center, black 45%, transparent 72%)" : undefined,
-                WebkitMaskImage: equippedItem ? "radial-gradient(circle at center, black 45%, transparent 72%)" : undefined,
-              }}
             />
           </motion.div>
 
@@ -442,14 +437,14 @@ function ClickerContent() {
       {lastDrop && (
         <div className="flex flex-col items-center gap-2">
           <p className="text-xs uppercase tracking-widest" style={{ color: "#2a2a2a" }}>Último drop</p>
-          <RecentDropStrip rarity={lastDrop.rarity as RarityKey} name={lastDrop.item.name} imageUrl={lastDrop.item.image_url} float={lastDrop.float_value} />
+          <RecentDropStrip rarity={lastDrop.rarity as RarityKey} name={lastDrop.item.name} float={lastDrop.float_value} />
         </div>
       )}
     </div>
   );
 }
 
-function RecentDropStrip({ rarity, name, imageUrl, float }: { rarity: RarityKey; name: string; imageUrl: string; float: number }) {
+function RecentDropStrip({ rarity, name, float }: { rarity: RarityKey; name: string; float: number }) {
   const config = RARITIES[rarity];
   const glowColor = config.gradient ? config.gradient[0] : (config.color ?? "#404040");
   return (
@@ -459,7 +454,7 @@ function RecentDropStrip({ rarity, name, imageUrl, float }: { rarity: RarityKey;
       style={{ background: "#060606", border: `1px solid ${glowColor}30`, boxShadow: `0 0 12px ${glowColor}15` }}
     >
       <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0" style={{ background: "rgba(255,255,255,0.05)" }}>
-        {imageUrl ? <Image src={imageUrl} alt={name} width={32} height={32} className="object-cover" style={{ mixBlendMode: "screen" }} /> : <span className="text-lg">🎁</span>}
+        <ItemSVG name={name} rarity={rarity} size={32} glow={false} />
       </div>
       <div>
         <p className="text-xs font-medium truncate max-w-[160px]" style={{ color: "#efefef" }}>{name}</p>

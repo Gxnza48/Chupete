@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { useInventory } from "@/hooks/useInventory";
 import { useProfile } from "@/hooks/useProfile";
 import { RARITIES, getConditionLabel, type RarityKey } from "@/lib/rarities";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 import type { InventoryItem, Item } from "@/types/database";
 
 type Auction = {
@@ -67,8 +67,8 @@ function AuctionCard({ auction, currentUserId, onBid, onClaim }: {
       {/* Item info */}
       <div className="flex items-start gap-3 mb-3">
         <div className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0" style={{ background: `${color}10`, border: `1px solid ${color}20` }}>
-          {item?.image_url
-            ? <Image src={item.image_url} alt={item.name} width={56} height={56} className="object-contain" style={{ mixBlendMode: "screen" }} />
+          {item
+            ? <ItemSVG name={item.name} rarity={item.rarity} size={56} glow={false} />
             : <span className="text-2xl">🎁</span>}
         </div>
         <div className="flex-1 min-w-0">

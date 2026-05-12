@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { formatNum } from "@/lib/format";
 import { RARITIES } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 
 type Trade = {
   id: string;
   price_credits: number;
   sold_at: string;
-  item: { name: string; rarity: string; image_url: string };
+  item: { name: string; rarity: string };
   seller: { username: string };
   buyer: { username: string };
   float_value: number;
@@ -71,7 +71,7 @@ export default function TradesPage() {
       const raw = (json.trades ?? []) as {
         id: string; price_credits: number; sold_at: string;
         float_value: number;
-        item: { name: string; rarity: string; image_url: string };
+        item: { name: string; rarity: string };
         seller: string; buyer: string;
       }[];
 
@@ -81,7 +81,7 @@ export default function TradesPage() {
         id: r.id,
         price_credits: r.price_credits ?? 0,
         sold_at: r.sold_at ?? "",
-        item: r.item ?? { name: "Item", rarity: "comun", image_url: "" },
+        item: r.item ?? { name: "Item", rarity: "comun" },
         seller: { username: r.seller ?? "?" },
         buyer: { username: r.buyer ?? "?" },
         float_value: r.float_value ?? 0,
@@ -177,10 +177,7 @@ export default function TradesPage() {
                 {/* Item image */}
                 <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden"
                   style={{ background: color + "10" }}>
-                  {t.item.image_url ? (
-                    <Image src={t.item.image_url} alt={t.item.name} width={40} height={40} className="object-contain"
-                      style={{ mixBlendMode: "screen", maskImage: "radial-gradient(circle, black 50%, transparent 78%)", WebkitMaskImage: "radial-gradient(circle, black 50%, transparent 78%)" }} />
-                  ) : <span className="text-lg">🎁</span>}
+                  <ItemSVG name={t.item.name} rarity={t.item.rarity} size={40} glow={false} />
                 </div>
 
                 {/* Info */}

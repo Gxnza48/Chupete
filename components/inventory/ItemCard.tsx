@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import type { InventoryItem } from "@/types/database";
 import { RARITIES, getConditionLabel } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 
 interface ItemCardProps {
   inventoryItem: InventoryItem;
@@ -61,11 +61,8 @@ export default function ItemCard({ inventoryItem, onPreview }: ItemCardProps) {
         className="relative flex items-center justify-center flex-shrink-0"
         style={{ height: 130, background: `linear-gradient(135deg, ${glowColor}0a 0%, #080808 100%)` }}
       >
-        {item.image_url ? (
-          <Image src={item.image_url} alt={item.name} width={110} height={110} className="object-contain" style={{ maxHeight: 110, mixBlendMode: "screen" }} />
-        ) : (
-          <span className="text-5xl">🎁</span>
-        )}
+        <ItemSVG name={item.name} rarity={item.rarity} size={110} />
+
       </div>
 
       {/* Info */}

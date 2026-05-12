@@ -1,11 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import type { DropResult } from "@/types/database";
 import { RARITIES, getConditionLabel } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 
 interface DropToastProps {
   drop: DropResult;
@@ -57,17 +57,7 @@ export default function DropToast({ drop, onDismiss }: DropToastProps) {
             border: `1px solid ${glowColor}30`,
           }}
         >
-          {drop.item.image_url ? (
-            <Image
-              src={drop.item.image_url}
-              alt={drop.item.name}
-              width={56}
-              height={56}
-              className="object-cover w-full h-full"
-            />
-          ) : (
-            <span className="text-3xl">🎁</span>
-          )}
+          <ItemSVG name={drop.item.name} rarity={drop.item.rarity} size={56} glow={false} />
         </div>
 
         {/* Info */}

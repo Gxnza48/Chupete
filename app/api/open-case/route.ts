@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString();
     const { data: items } = await admin
       .from("items")
-      .select("id, name, rarity, image_url")
+      .select("id, name, rarity")
       .eq("rarity", rarity)
       .eq("case_drop", true)
       .or(`available_from.is.null,available_from.lte.${now}`)

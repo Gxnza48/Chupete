@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { X } from "lucide-react";
 import { useInventory } from "@/hooks/useInventory";
 import { useProfile } from "@/hooks/useProfile";
@@ -12,13 +11,14 @@ import type { RarityType } from "@/types/database";
 import { RARITIES, type RarityKey } from "@/lib/rarities";
 import { getCraftOutcome } from "@/lib/craft";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 import type { InventoryItem } from "@/types/database";
 
 type CraftResult = {
   success: boolean;
   result_rarity: RarityKey;
   total_value: number;
-  item: { name: string; rarity: string; image_url: string; float_value: number; inventory_id?: string };
+  item: { name: string; rarity: string; float_value: number; inventory_id?: string };
 };
 
 function getRarityColor(rarity: RarityKey): string {
@@ -75,7 +75,6 @@ export default function CrafteoPage() {
               name: data.item.name,
               rarity: data.item.rarity as RarityType,
               description: null,
-              image_url: data.item.image_url,
               base_price_ars: 0,
               created_at: "",
             },
@@ -139,8 +138,8 @@ export default function CrafteoPage() {
                   }}
                 >
                   <div className="w-10 h-10 flex items-center justify-center rounded-lg overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
-                    {inv.item?.image_url
-                      ? <Image src={inv.item.image_url} alt={inv.item.name} width={40} height={40} className="object-contain" style={{ mixBlendMode: "screen" }} />
+                    {inv.item
+                      ? <ItemSVG name={inv.item.name} rarity={inv.item.rarity} size={40} glow={false} />
                       : <span className="text-xl">🎁</span>}
                   </div>
                   <p className="text-[9px] leading-tight truncate w-full" style={{ color: "#a0a0a0", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
@@ -166,8 +165,8 @@ export default function CrafteoPage() {
                   <div key={inv.id} className="relative">
                     <div className="flex flex-col items-center gap-1 p-2 rounded-xl" style={{ width: 68, background: `${color}12`, border: `1px solid ${color}30` }}>
                       <div className="w-9 h-9 flex items-center justify-center rounded-lg overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
-                        {inv.item?.image_url
-                          ? <Image src={inv.item.image_url} alt={inv.item.name} width={36} height={36} className="object-contain" style={{ mixBlendMode: "screen" }} />
+                        {inv.item
+                          ? <ItemSVG name={inv.item.name} rarity={inv.item.rarity} size={36} glow={false} />
                           : <span className="text-lg">🎁</span>}
                       </div>
                       <p className="text-[9px] truncate w-full text-center" style={{ color: "#a0a0a0" }}>{inv.item?.name}</p>

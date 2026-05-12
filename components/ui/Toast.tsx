@@ -14,7 +14,7 @@ import type { DropResult } from "@/types/database";
 import { getConditionLabel, RARITIES } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import RarityText from "./RarityText";
-import Image from "next/image";
+import ItemSVG from "./ItemSVG";
 
 export type ToastVariant = "default" | "drop" | "levelup" | "error" | "broke" | "badge";
 
@@ -57,17 +57,7 @@ function DropToastContent({ drop }: { drop: DropResult }) {
         className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden"
         style={{ background: "rgba(255,255,255,0.05)" }}
       >
-        {drop.item.image_url ? (
-          <Image
-            src={drop.item.image_url}
-            alt={drop.item.name}
-            width={48}
-            height={48}
-            className="object-cover w-full h-full" style={{ mixBlendMode: "screen" }}
-          />
-        ) : (
-          <span className="text-2xl">🎁</span>
-        )}
+        <ItemSVG name={drop.item.name} rarity={drop.item.rarity} size={48} glow={false} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs mb-0.5" style={{ color: "#404040" }}>

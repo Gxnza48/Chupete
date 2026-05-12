@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { X, Eye, EyeOff, ShoppingBag, Trash2, Bold, Italic, Check, Zap, DollarSign } from "lucide-react";
 import type { InventoryItem } from "@/types/database";
 import { RARITIES, getConditionLabel } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import SellModal from "./SellModal";
@@ -161,11 +161,7 @@ export default function ItemPreviewModal({ inventoryItem, onClose, onRefetch, re
                     En venta
                   </div>
                 )}
-                {item.image_url ? (
-                  <Image src={item.image_url} alt={item.name} width={150} height={150} className="object-contain" style={{ mixBlendMode: "screen" }} />
-                ) : (
-                  <span className="text-7xl">🎁</span>
-                )}
+                <ItemSVG name={item.name} rarity={item.rarity} size={150} />
               </div>
 
               {/* Info + actions */}

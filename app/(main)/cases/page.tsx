@@ -2,15 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { CASE_LIST, getPercentages, RARITY_COLOR, DAILY_CASE_COOLDOWN_HOURS, type CaseDefinition, type CaseRarityEntry } from "@/lib/cases";
 import { RARITIES } from "@/lib/rarities";
-import type { RarityKey } from "@/lib/rarities";
 import { useProfile } from "@/hooks/useProfile";
 import { createClient } from "@/lib/supabase/client";
 import CaseOpenModal, { type CaseResult, type ItemsByRarity } from "@/components/cases/CaseOpenModal";
 import RarityText from "@/components/ui/RarityText";
+import ItemSVG from "@/components/ui/ItemSVG";
 import PromoCode from "@/components/ui/PromoCode";
 
 /* ─── Countdown ─────────────────────────────────────────────────────────── */
@@ -32,7 +31,25 @@ function Countdown({ nextOpenAt }: { nextOpenAt: string }) {
   return <span style={{ fontFamily: "var(--font-jetbrains-mono), monospace" }}>{t}</span>;
 }
 
-const DAILY_IMAGE = "https://wudlmpexpazsvuxfdkcl.supabase.co/storage/v1/object/public/item-assets/daily.png";
+/* ─── Case art SVG (procedural) ──────────────────────────────────────────── */
+function CaseArt({ accentColor, size = 88, available = true }: { accentColor: string; size?: number; available?: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: available ? 1 : 0.35 }}>
+      <defs>
+        <linearGradient id={`cgrad-${accentColor}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={accentColor} stopOpacity="0.95" />
+          <stop offset="100%" stopColor={accentColor} stopOpacity="0.55" />
+        </linearGradient>
+      </defs>
+      <rect x="14" y="32" width="72" height="50" rx="6" fill={`url(#cgrad-${accentColor})`} stroke={accentColor} strokeWidth="1.5" />
+      <rect x="14" y="32" width="72" height="14" rx="6" fill={accentColor} opacity="0.85" />
+      <rect x="44" y="32" width="12" height="50" fill={accentColor} opacity="0.6" />
+      <circle cx="50" cy="40" r="3.5" fill="#0a0a0a" stroke={accentColor} strokeWidth="1.2" />
+      <rect x="14" y="44" width="72" height="2" fill="rgba(0,0,0,0.35)" />
+      <rect x="14" y="80" width="72" height="2" fill="rgba(0,0,0,0.35)" />
+    </svg>
+  );
+}
 
 /* ─── Drops preview section ──────────────────────────────────────────────── */
 function DropsPreview({ rarities, itemsByRarity }: { rarities: CaseRarityEntry[]; itemsByRarity: ItemsByRarity }) {
@@ -61,18 +78,7 @@ function DropsPreview({ rarities, itemsByRarity }: { rarities: CaseRarityEntry[]
                     style={{ background: color + "0c", border: `1px solid ${color}25`, width: 64 }}
                   >
                     <div className="w-10 h-10 flex items-center justify-center">
-                      <Image
-                        src={item.image_url}
-                        alt={item.name}
-                        width={40}
-                        height={40}
-                        className="object-contain"
-                        style={{
-                          mixBlendMode: "screen",
-                          maskImage: "radial-gradient(circle at center, black 50%, transparent 78%)",
-                          WebkitMaskImage: "radial-gradient(circle at center, black 50%, transparent 78%)",
-                        }}
-                      />
+                      <ItemSVG name={item.name} rarity={rarity} size={40} glow={false} />
                     </div>
                     <p className="text-[8px] text-center leading-tight line-clamp-2" style={{ color: "#404040" }}>
                       {item.name}
@@ -177,7 +183,7 @@ export default function CasesPage() {
   // Fetch all items
   useEffect(() => {
     const supabase = createClient();
-    supabase.from("items").select("id, name, rarity, image_url").then(({ data }) => {
+    supabase.from("items").select("id, name, rarity").then(({ data }) => {
       if (!data) return;
       const grouped: ItemsByRarity = {};
       for (const item of data) {
@@ -269,14 +275,7 @@ export default function CasesPage() {
           style={{ background: "#060606", border: `1px solid ${dailyAvailable ? "rgba(74,154,74,0.35)" : "rgba(255,255,255,0.05)"}` }}>
           <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
             <div className="flex-shrink-0 self-start sm:self-auto">
-              <Image
-                src={DAILY_IMAGE}
-                alt="Caja Diaria"
-                width={88}
-                height={88}
-                className="object-contain"
-                style={{ opacity: dailyAvailable ? 1 : 0.35 }}
-              />
+              <CaseArt accentColor="#4a9a4a" size={88} available={dailyAvailable} />
             </div>
             <div className="flex-1 w-full min-w-0">
               <p className="font-bold text-sm mb-0.5" style={{ color: "#efefef", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
@@ -356,13 +355,7 @@ export default function CasesPage() {
               {/* Case art */}
               <div className="relative flex flex-col items-center justify-center py-8 gap-2"
                 style={{ background: `linear-gradient(145deg, ${c.accentColor}10 0%, transparent 80%)` }}>
-                <Image
-                  src={c.imageUrl}
-                  alt={c.name}
-                  width={160}
-                  height={160}
-                  className="object-contain"
-                />
+                <CaseArt accentColor={c.accentColor} size={160} />
                 <p className="text-[10px] uppercase tracking-widest font-semibold"
                   style={{ color: c.accentColor + "aa", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
                   {c.description}
