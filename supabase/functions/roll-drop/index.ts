@@ -39,13 +39,6 @@ function generateFloat(): number {
   return arr[0] / 4294967296;
 }
 
-// Credits per click for legendary+ equipped items (1 cr = 1 click for legendario)
-const CLICK_CREDIT_MULTIPLIER: Record<string, number> = {
-  legendario:     1,
-  extraterrestre: 3,
-  en_el_ort:      10,
-};
-
 // Max durability per condition (float_value)
 function getMaxDurability(floatValue: number): number {
   if (floatValue < 0.07)  return 5000;
@@ -146,7 +139,7 @@ serve(async (req: Request) => {
     clickCount = Math.min(Math.max(1, parseInt(body.click_count ?? 1, 10)), MAX_CLICKS_PER_BATCH);
   } catch { /* default to 1 */ }
 
-  // Fetch current profile + equipped item for durability/multiplier
+  // Fetch current profile
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("total_clicks, xp, level, credits, equipped_chupete_id")
@@ -159,23 +152,19 @@ serve(async (req: Request) => {
     });
   }
 
-  // Fetch equipped item for click multiplier and durability
-  let equippedRarity: string | null = null;
+  // Fetch equipped item durability (for wear system)
   let equippedDurability: number | null = null;
-  let equippedMaxDurability: number | null = null;
   const equippedId = profile.equipped_chupete_id;
 
   if (equippedId) {
     const { data: equippedInv } = await supabase
       .from("inventory")
-      .select("id, durability, max_durability, item:items(rarity)")
+      .select("id, durability, max_durability")
       .eq("id", equippedId)
       .maybeSingle();
 
     if (equippedInv) {
-      equippedRarity = (equippedInv.item as Record<string, unknown>)?.rarity as string ?? null;
       equippedDurability = equippedInv.durability ?? null;
-      equippedMaxDurability = equippedInv.max_durability ?? null;
     }
   }
 
@@ -255,14 +244,10 @@ serve(async (req: Request) => {
   }
 
   // Calculate credits earned this batch
+  // Credits come from: drops, level ups, and click milestones — NOT from raw clicks
   let creditsEarned = 0;
 
-  // Credits per click for legendary+ equipped items
-  if (equippedRarity && CLICK_CREDIT_MULTIPLIER[equippedRarity]) {
-    creditsEarned += CLICK_CREDIT_MULTIPLIER[equippedRarity] * clickCount;
-  }
-
-  // Credits for drop rarity
+  // Credits for drop rarity bonus
   if (isDropped && rarity) {
     creditsEarned += CREDITS_RARITY_BONUS[rarity] ?? 0;
   }
