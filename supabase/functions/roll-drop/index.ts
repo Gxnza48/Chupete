@@ -39,6 +39,22 @@ function generateFloat(): number {
   return arr[0] / 4294967296;
 }
 
+// Credits per click for legendary+ equipped items
+const CLICK_CREDIT_MULTIPLIER: Record<string, number> = {
+  legendario:     2,
+  extraterrestre: 5,
+  en_el_ort:      20,
+};
+
+// Max durability per condition (float_value)
+function getMaxDurability(floatValue: number): number {
+  if (floatValue < 0.07)  return 5000;
+  if (floatValue < 0.15)  return 3000;
+  if (floatValue < 0.38)  return 1500;
+  if (floatValue < 0.45)  return 800;
+  return 300;
+}
+
 const XP_PER_CLICK = 2;
 const XP_RARITY_BONUS: Record<string, number> = {
   comun:          0,
@@ -128,10 +144,10 @@ serve(async (req: Request) => {
     clickCount = Math.min(Math.max(1, parseInt(body.click_count ?? 1, 10)), MAX_CLICKS_PER_BATCH);
   } catch { /* default to 1 */ }
 
-  // Fetch current profile
+  // Fetch current profile + equipped item for durability/multiplier
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("total_clicks, xp, level, credits")
+    .select("total_clicks, xp, level, credits, equipped_chupete_id")
     .eq("id", user.id)
     .single();
 
@@ -139,6 +155,26 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Profile not found" }), {
       status: 404, headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });
+  }
+
+  // Fetch equipped item for click multiplier and durability
+  let equippedRarity: string | null = null;
+  let equippedDurability: number | null = null;
+  let equippedMaxDurability: number | null = null;
+  const equippedId = profile.equipped_chupete_id;
+
+  if (equippedId) {
+    const { data: equippedInv } = await supabase
+      .from("inventory")
+      .select("id, durability, max_durability, item:items(rarity)")
+      .eq("id", equippedId)
+      .maybeSingle();
+
+    if (equippedInv) {
+      equippedRarity = (equippedInv.item as Record<string, unknown>)?.rarity as string ?? null;
+      equippedDurability = equippedInv.durability ?? null;
+      equippedMaxDurability = equippedInv.max_durability ?? null;
+    }
   }
 
   // Roll for drop: P(at least one drop in N clicks) = 1 - (1 - p)^N
@@ -184,9 +220,10 @@ serve(async (req: Request) => {
       float_value: floatValue, rarity, dropped_at: new Date().toISOString(),
     });
 
+    const maxDur = getMaxDurability(floatValue);
     const { data: invInsert, error: invError } = await supabase
       .from("inventory")
-      .insert({ user_id: user.id, item_id: item.id, float_value: floatValue, is_listed: false })
+      .insert({ user_id: user.id, item_id: item.id, float_value: floatValue, is_listed: false, durability: maxDur, max_durability: maxDur })
       .select("id").single();
 
     if (invError || !invInsert) {
@@ -203,8 +240,25 @@ serve(async (req: Request) => {
   const newLevel = calculateLevelFromXp(newXp);
   const oldLevel = profile.level ?? 1;
 
+  // Durability: reduce equipped item durability, unequip at 0
+  if (equippedId && equippedDurability !== null) {
+    const newDurability = Math.max(0, equippedDurability - clickCount);
+    if (newDurability <= 0) {
+      // Item breaks: remove from equipped and delete
+      await supabase.from("profiles").update({ equipped_chupete_id: null }).eq("id", user.id);
+      await supabase.from("inventory").delete().eq("id", equippedId);
+    } else {
+      await supabase.from("inventory").update({ durability: newDurability }).eq("id", equippedId);
+    }
+  }
+
   // Calculate credits earned this batch
   let creditsEarned = 0;
+
+  // Credits per click for legendary+ equipped items
+  if (equippedRarity && CLICK_CREDIT_MULTIPLIER[equippedRarity]) {
+    creditsEarned += CLICK_CREDIT_MULTIPLIER[equippedRarity] * clickCount;
+  }
 
   // Credits for drop rarity
   if (isDropped && rarity) {

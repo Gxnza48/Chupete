@@ -14,6 +14,10 @@ const NAV_LINKS = [
   { href: "/cases", label: "Cajas" },
   { href: "/inventario", label: "Inventario" },
   { href: "/mercado", label: "Mercado" },
+  { href: "/upgrade", label: "Upgrade" },
+  { href: "/crafteo", label: "Crafteo" },
+  { href: "/subastas", label: "Subastas" },
+  { href: "/leaderboard", label: "Ranking" },
   { href: "/trades", label: "Trades" },
 ];
 
@@ -88,7 +92,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150"
+                className="px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-150 whitespace-nowrap"
                 style={{
                   fontFamily: "var(--font-syne), Syne, sans-serif",
                   color: isActive ? "#efefef" : "#404040",

@@ -95,6 +95,21 @@ export default function ItemCard({ inventoryItem, onPreview }: ItemCardProps) {
           <span className="text-[10px] px-2 py-0.5 rounded-md inline-block" style={{ background: "rgba(255,255,255,0.05)", color: "#505050", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
             {condition}
           </span>
+          {inventoryItem.durability != null && inventoryItem.max_durability != null && (
+            <div className="mt-1.5 h-0.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${Math.max(0, (inventoryItem.durability / inventoryItem.max_durability) * 100)}%`,
+                  background: inventoryItem.durability / inventoryItem.max_durability > 0.5
+                    ? "#4a9a4a"
+                    : inventoryItem.durability / inventoryItem.max_durability > 0.2
+                    ? "#ffaa00"
+                    : "#ff6b6b",
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
     </motion.div>

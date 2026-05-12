@@ -16,6 +16,9 @@ export interface Item {
   image_url: string;
   base_price_ars: number;
   created_at: string;
+  available_from?: string | null;
+  available_until?: string | null;
+  is_limited?: boolean;
 }
 
 export interface Profile {
@@ -30,6 +33,9 @@ export interface Profile {
   credits: number;
   equipped_chupete_id: string | null;
   last_daily_case_at: string | null;
+  autoclicker_until: string | null;
+  autoclicker_last_claimed: string | null;
+  autoclicker_rate: number;
   created_at: string;
   updated_at: string;
 }
@@ -42,6 +48,8 @@ export interface InventoryItem {
   obtained_at: string;
   is_listed: boolean;
   show_in_profile: boolean;
+  durability?: number | null;
+  max_durability?: number | null;
   nickname?: string | null;
   nickname_bold?: boolean;
   nickname_italic?: boolean;
@@ -113,4 +121,26 @@ export interface DropResult {
   rarity: RarityType;
   isNewRecord: boolean;
   inventory_id: string;
+}
+
+export interface Auction {
+  id: string;
+  seller_id: string;
+  inventory_id: string;
+  starting_bid: number;
+  current_bid: number | null;
+  current_bidder_id: string | null;
+  ends_at: string;
+  status: "active" | "ended" | "cancelled";
+  created_at: string;
+  inventory?: (InventoryItem & { item?: Item }) | null;
+  seller?: Pick<Profile, "id" | "username" | "level"> | null;
+}
+
+export interface AuctionBid {
+  id: string;
+  auction_id: string;
+  bidder_id: string;
+  amount: number;
+  placed_at: string;
 }

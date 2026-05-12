@@ -45,11 +45,14 @@ export async function POST(request: NextRequest) {
     // Roll rarity
     const rarity = rollRarity(caseDef.rarities);
 
-    // Pick random item of that rarity
+    // Pick random item of that rarity (filter by availability)
+    const now = new Date().toISOString();
     const { data: items } = await admin
       .from("items")
       .select("id, name, rarity, image_url")
-      .eq("rarity", rarity);
+      .eq("rarity", rarity)
+      .or(`available_from.is.null,available_from.lte.${now}`)
+      .or(`available_until.is.null,available_until.gte.${now}`);
 
     if (!items || items.length === 0) {
       // Fallback: refund and error
@@ -60,6 +63,15 @@ export async function POST(request: NextRequest) {
     const item = items[Math.floor(Math.random() * items.length)];
     const floatValue = Math.random();
 
+    function getMaxDurability(fv: number): number {
+      if (fv < 0.07)  return 5000;
+      if (fv < 0.15)  return 3000;
+      if (fv < 0.38)  return 1500;
+      if (fv < 0.45)  return 800;
+      return 300;
+    }
+    const maxDur = getMaxDurability(floatValue);
+
     const { data: inventoryEntry, error: invError } = await admin
       .from("inventory")
       .insert({
@@ -68,6 +80,8 @@ export async function POST(request: NextRequest) {
         float_value: floatValue,
         is_listed: false,
         show_in_profile: false,
+        durability: maxDur,
+        max_durability: maxDur,
       })
       .select("id")
       .single();

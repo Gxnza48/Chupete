@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { X, Eye, EyeOff, ShoppingBag, Trash2, Bold, Italic, Check, Zap } from "lucide-react";
+import { X, Eye, EyeOff, ShoppingBag, Trash2, Bold, Italic, Check, Zap, DollarSign } from "lucide-react";
 import type { InventoryItem } from "@/types/database";
 import { RARITIES, getConditionLabel } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
@@ -11,6 +11,7 @@ import RarityText from "@/components/ui/RarityText";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import SellModal from "./SellModal";
+import { QUICK_SELL_PRICES } from "@/lib/quickSell";
 
 const NICKNAME_COLORS = [
   "#efefef", "#4a9a4a", "#8050d0", "#ff6b6b",
@@ -29,6 +30,8 @@ export default function ItemPreviewModal({ inventoryItem, onClose, onRefetch, re
   const [togglingProfile, setTogglingProfile] = useState(false);
   const [showSell, setShowSell] = useState(false);
   const [confirmTrash, setConfirmTrash] = useState(false);
+  const [confirmQuickSell, setConfirmQuickSell] = useState(false);
+  const [quickSelling, setQuickSelling] = useState(false);
   const [cancellingListing, setCancellingListing] = useState(false);
   const [equipping, setEquipping] = useState(false);
   const { profile, refetch: refetchProfile } = useProfile();
@@ -58,6 +61,7 @@ export default function ItemPreviewModal({ inventoryItem, onClose, onRefetch, re
     setNickColor(inventoryItem.nickname_color ?? "#efefef");
     setShowSell(false);
     setConfirmTrash(false);
+    setConfirmQuickSell(false);
     setNickSaved(false);
   }, [inventoryItem?.id]);
 
@@ -117,6 +121,21 @@ export default function ItemPreviewModal({ inventoryItem, onClose, onRefetch, re
     onClose();
   }
 
+  async function handleQuickSell() {
+    if (!inventoryItem) return;
+    setQuickSelling(true);
+    await fetch("/api/quick-sell", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inventory_id: inventoryItem.id }),
+    });
+    setQuickSelling(false);
+    onRefetch();
+    onClose();
+  }
+
+  const quickSellPrice = item ? (QUICK_SELL_PRICES[item.rarity] ?? 30) : 0;
+
   return (
     <>
       <AnimatePresence>
@@ -163,10 +182,35 @@ export default function ItemPreviewModal({ inventoryItem, onClose, onRefetch, re
                 </h3>
                 <RarityText rarity={rarity} className="text-xs font-semibold mb-3 block" />
 
-                <div className="flex items-center gap-2 mb-5">
+                <div className="flex items-center gap-2 mb-3">
                   <span className="text-[10px]" style={{ fontFamily: "var(--font-jetbrains-mono), monospace", color: "#3a3a3a" }}>{inventoryItem.float_value.toFixed(8)}</span>
                   <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.05)", color: "#404040" }}>{condition}</span>
                 </div>
+
+                {/* Durability bar */}
+                {inventoryItem.durability != null && inventoryItem.max_durability != null && (
+                  <div className="mb-4">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-[10px]" style={{ color: "#3a3a3a" }}>Durabilidad</span>
+                      <span className="text-[10px]" style={{ color: "#3a3a3a", fontFamily: "var(--font-jetbrains-mono), monospace" }}>
+                        {inventoryItem.durability}/{inventoryItem.max_durability}
+                      </span>
+                    </div>
+                    <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.max(0, (inventoryItem.durability / inventoryItem.max_durability) * 100)}%`,
+                          background: inventoryItem.durability / inventoryItem.max_durability > 0.5
+                            ? "#4a9a4a"
+                            : inventoryItem.durability / inventoryItem.max_durability > 0.2
+                            ? "#ffaa00"
+                            : "#ff6b6b",
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {!readOnly && (
                   <div className="flex flex-col gap-2">
@@ -255,6 +299,22 @@ export default function ItemPreviewModal({ inventoryItem, onClose, onRefetch, re
                         <Zap size={13} />
                         {equipping ? "..." : isEquipped ? "Desequipar clicker" : "Equipar como clicker"}
                       </button>
+                    )}
+
+                    {/* Quick sell */}
+                    {!inventoryItem.is_listed && (
+                      confirmQuickSell ? (
+                        <div className="flex gap-2">
+                          <button onClick={() => setConfirmQuickSell(false)} className="flex-1 py-2 rounded-xl text-xs" style={{ background: "rgba(255,255,255,0.04)", color: "#404040", border: "1px solid rgba(255,255,255,0.07)", fontFamily: "var(--font-syne), Syne, sans-serif" }}>Cancelar</button>
+                          <button onClick={handleQuickSell} disabled={quickSelling} className="flex-1 py-2 rounded-xl text-xs font-bold" style={{ background: "rgba(74,154,74,0.12)", color: "#4a9a4a", border: "1px solid rgba(74,154,74,0.3)", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
+                            {quickSelling ? "..." : `Vender por ${quickSellPrice.toLocaleString("es-AR")} cr.`}
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmQuickSell(true)} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold" style={{ background: "rgba(74,154,74,0.07)", border: "1px solid rgba(74,154,74,0.2)", color: "#4a9a4a", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
+                          <DollarSign size={13} /> Venta rápida — {quickSellPrice.toLocaleString("es-AR")} cr.
+                        </button>
+                      )
                     )}
 
                     {/* Sell / Cancel */}
