@@ -19,6 +19,7 @@ export interface Item {
   available_from?: string | null;
   available_until?: string | null;
   is_limited?: boolean;
+  case_drop?: boolean;
 }
 
 export interface Profile {

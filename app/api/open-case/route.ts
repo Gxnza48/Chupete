@@ -45,12 +45,13 @@ export async function POST(request: NextRequest) {
     // Roll rarity
     const rarity = rollRarity(caseDef.rarities);
 
-    // Pick random item of that rarity (filter by availability)
+    // Pick random item of that rarity (cases only + availability window)
     const now = new Date().toISOString();
     const { data: items } = await admin
       .from("items")
       .select("id, name, rarity, image_url")
       .eq("rarity", rarity)
+      .eq("case_drop", true)
       .or(`available_from.is.null,available_from.lte.${now}`)
       .or(`available_until.is.null,available_until.gte.${now}`);
 

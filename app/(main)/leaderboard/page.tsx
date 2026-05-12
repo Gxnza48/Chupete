@@ -189,7 +189,7 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
       const frameRow = userRows.find((r) => r.shop_item?.type === "frame");
       const charmRows = userRows.filter((r) => r.shop_item?.type === "charm");
       cosmeticsByUser[uid] = {
-        frame:  frameRow?.shop_item?.key ?? null,
+        frame:  frameRow?.shop_item?.icon ?? null,   // icon = "gold" | "neon" | "void" | "plasma" …
         charms: charmRows.map((r) => r.shop_item?.icon ?? "").filter(Boolean),
       };
     }

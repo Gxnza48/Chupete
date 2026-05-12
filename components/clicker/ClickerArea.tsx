@@ -169,16 +169,28 @@ function ClickerContent() {
         max_durability: null,
       });
 
-      // Try to fetch durability separately (requires migration 007)
+      // Try to fetch durability separately (requires migration 007 + 010)
       try {
         const { data: dur } = await supabase
           .from("inventory")
-          .select("durability, max_durability")
+          .select("durability, max_durability, float_value")
           .eq("id", profile.equipped_chupete_id)
           .maybeSingle();
-        if (dur?.max_durability) {
-          setEquippedItem((prev) => prev ? { ...prev, durability: dur.durability, max_durability: dur.max_durability } : prev);
-          setLocalDurability(dur.durability ?? null);
+
+        // Use DB durability if available; fall back to float_value-derived max for untracked items
+        function maxFromFloat(fv: number): number {
+          if (fv < 0.07) return 5000;
+          if (fv < 0.15) return 3000;
+          if (fv < 0.38) return 1500;
+          if (fv < 0.45) return 800;
+          return 300;
+        }
+
+        if (dur) {
+          const maxDur = dur.max_durability ?? maxFromFloat(dur.float_value ?? 0.5);
+          const curDur = dur.durability ?? maxDur;
+          setEquippedItem((prev) => prev ? { ...prev, durability: curDur, max_durability: maxDur } : prev);
+          setLocalDurability(curDur);
         }
       } catch {}
     }
