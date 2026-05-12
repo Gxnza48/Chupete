@@ -3,7 +3,6 @@ import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
 const MAX_CLAIM_SECONDS = 8 * 3600; // cap at 8h of accumulated clicks
-const CREDITS_PER_CLICK = 1;        // each auto-click earns 1 credit
 
 function adminClient() {
   return createSupabaseAdmin(
@@ -53,27 +52,17 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ clicks: 0, credits: 0, message: "Nada que reclamar aún." });
     }
 
-    const creditsEarned = clickCount * CREDITS_PER_CLICK;
     const XP_PER_CLICK = 2;
     const newXp = (profile.xp ?? 0) + XP_PER_CLICK * clickCount;
     const newClicks = (profile.total_clicks ?? 0) + clickCount;
-    const newCredits = (profile.credits ?? 0) + creditsEarned;
 
     await admin.from("profiles").update({
-      credits: newCredits,
       total_clicks: newClicks,
       xp: newXp,
       autoclicker_last_claimed: now.toISOString(),
     }).eq("id", user.id);
 
-    await admin.from("credit_transactions").insert({
-      user_id: user.id,
-      amount: creditsEarned,
-      reason: "autoclicker_claim",
-      ref_id: null,
-    });
-
-    return NextResponse.json({ success: true, clicks: clickCount, credits: creditsEarned });
+    return NextResponse.json({ success: true, clicks: clickCount, credits: 0 });
   } catch (err) {
     console.error("claim-autoclicker error:", err);
     return NextResponse.json({ error: "Error interno." }, { status: 500 });

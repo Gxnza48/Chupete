@@ -6,7 +6,8 @@ import Image from "next/image";
 import { useInventory } from "@/hooks/useInventory";
 import { useProfile } from "@/hooks/useProfile";
 import { RARITIES, type RarityKey, getConditionLabel } from "@/lib/rarities";
-import { RARITY_RANK, getUpgradeOdds, getUpgradeOddsPct, getRarityColor } from "@/lib/upgrade";
+import { RARITY_RANK, getUpgradeOdds, getUpgradeOddsPct, getRarityColor, getWheelTarget } from "@/lib/upgrade";
+import { playUpgradeSpin, playUpgradeWin, playUpgradeLose } from "@/lib/sounds";
 import RarityText from "@/components/ui/RarityText";
 import type { InventoryItem } from "@/types/database";
 
@@ -18,21 +19,6 @@ const SW = 28;                          // stroke width
 const C  = 2 * Math.PI * R;            // circumference ≈ 679
 
 const MIN_VISUAL_DEG = 4;              // minimum visible arc so it's never invisible
-
-/** Returns the rotation angle (degrees) that makes the wheel land on win or lose */
-function getWheelTarget(odds: number, success: boolean): number {
-  const baseSpins = 4 * 360;
-  if (success) {
-    const winStart = 360 * (1 - odds);
-    const winSize  = 360 * odds;
-    const t = winStart + winSize * (0.1 + Math.random() * 0.8);
-    return baseSpins + t;
-  } else {
-    const loseSize = 360 * (1 - odds);
-    const t = loseSize * (0.1 + Math.random() * 0.8);
-    return baseSpins + t;
-  }
-}
 
 // ── Wheel component ───────────────────────────────────────────────────────────
 function UpgradeWheel({
@@ -173,11 +159,13 @@ export default function UpgradePage() {
     });
     const data = await res.json() as UpgradeResult;
 
-    const target = getWheelTarget(odds, data.success);
-    setWheelAngle(prev => prev + target);
+    playUpgradeSpin();
+    const target = getWheelTarget(wheelAngle, odds, data.success);
+    setWheelAngle(target);
     setResult(data);
 
     setTimeout(() => {
+      if (data.success) playUpgradeWin(); else playUpgradeLose();
       setShowResult(true);
       setSpinning(false);
       setSelected(null);
@@ -187,7 +175,7 @@ export default function UpgradePage() {
     }, 5500);
   }, [selected, targetRarity, fromRarity, odds, spinning, refetch, refetchProfile]);
 
-  const reset = () => { setShowResult(false); setResult(null); setWheelAngle(0); };
+  const reset = () => { setShowResult(false); setResult(null); };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8" style={{ background: "#000000" }}>

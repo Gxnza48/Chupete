@@ -39,11 +39,11 @@ function generateFloat(): number {
   return arr[0] / 4294967296;
 }
 
-// Credits per click for legendary+ equipped items
+// Credits per click for legendary+ equipped items (1 cr = 1 click for legendario)
 const CLICK_CREDIT_MULTIPLIER: Record<string, number> = {
-  legendario:     2,
-  extraterrestre: 5,
-  en_el_ort:      20,
+  legendario:     1,
+  extraterrestre: 3,
+  en_el_ort:      10,
 };
 
 // Max durability per condition (float_value)
@@ -79,16 +79,18 @@ const CREDITS_RARITY_BONUS: Record<string, number> = {
   en_el_ort:      10000,
 };
 
-// Credits awarded on level up: level * 100
+// Credits awarded on level up: level * 75
 function creditsForLevel(level: number): number {
-  return level * 100;
+  return level * 75;
 }
 
-// Click milestone credits
+// Click milestone credits (harder economy — these are rare bonuses)
 const CLICK_MILESTONE_CREDITS: Record<number, number> = {
-  100:   50,
-  1000:  200,
-  10000: 1000,
+  100:    25,
+  1000:   100,
+  10000:  500,
+  50000:  2000,
+  100000: 5000,
 };
 
 function calculateLevelFromXp(totalXp: number): number {

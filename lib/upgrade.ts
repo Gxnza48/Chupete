@@ -13,7 +13,7 @@ export const RARITY_RANK: Record<RarityKey, number> = {
 };
 
 // Probability per step gap (1-indexed)
-const STEP_ODDS = [0.35, 0.12, 0.04, 0.012, 0.003, 0.0005, 0.00002];
+const STEP_ODDS = [0.40, 0.15, 0.05, 0.015, 0.003, 0.0005, 0.00002];
 
 export function getUpgradeOdds(fromRarity: RarityKey, toRarity: RarityKey): number {
   const steps = RARITY_RANK[toRarity] - RARITY_RANK[fromRarity];
@@ -33,4 +33,25 @@ export const RARITY_LIST = Object.keys(RARITIES) as RarityKey[];
 export function getRarityColor(rarity: RarityKey): string {
   const cfg = RARITIES[rarity];
   return cfg.gradient ? cfg.gradient[0] : (cfg.color ?? "#3a3a3a");
+}
+
+/**
+ * Compute the absolute wheel rotation target.
+ * currentAngle = current accumulated angle of the wheel div.
+ * Returns an absolute angle to animate to.
+ * Win zone: arc covers [winStart°, 360°] (clockwise from 12 o'clock).
+ */
+export function getWheelTarget(currentAngle: number, odds: number, success: boolean): number {
+  // Round up to next whole rotation beyond current, then add 4 full spins
+  const base = Math.ceil(currentAngle / 360) * 360 + 4 * 360;
+  if (success) {
+    const winStart = 360 * (1 - odds);
+    const winSize  = 360 * odds;
+    const offset   = winStart + winSize * (0.1 + Math.random() * 0.8);
+    return base + offset;
+  } else {
+    const loseSize = 360 * (1 - odds);
+    const offset   = loseSize * (0.1 + Math.random() * 0.8);
+    return base + offset;
+  }
 }
