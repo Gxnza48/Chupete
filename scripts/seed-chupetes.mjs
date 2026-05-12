@@ -275,7 +275,7 @@ async function insertItems() {
     description,
     image_url: '',
     base_price_ars: BASE_PRICES[rarity] ?? 50,
-    case_drop: false,
+    case_drop: true,
   }))
 
   const BATCH = 50
