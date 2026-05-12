@@ -86,15 +86,18 @@ const CLICK_MILESTONE_CREDITS: Record<number, number> = {
   100000: 5000,
 };
 
+function xpForNextLevel(level: number): number {
+  if (level <= 100) return 150 + (level - 1) * 50;
+  return Math.floor(5100 * Math.pow(1.08, level - 100));
+}
+
 function calculateLevelFromXp(totalXp: number): number {
   let level = 1;
   let remaining = totalXp;
-  
-  const getXpNeeded = (lvl: number) => 150 + (lvl - 1) * 50;
-
-  while (remaining >= getXpNeeded(level) && level < 100) {
-    remaining -= getXpNeeded(level);
+  while (remaining >= xpForNextLevel(level)) {
+    remaining -= xpForNextLevel(level);
     level++;
+    if (level > 9999) break;
   }
   return level;
 }
@@ -152,21 +155,33 @@ serve(async (req: Request) => {
     });
   }
 
-  // Fetch equipped item durability (for wear system)
+  // Click multiplier by equipped item rarity
+  const CLICK_MULTIPLIER: Record<string, number> = {
+    en_el_ort:      20,
+    extraterrestre: 12,
+    legendario:     5,
+  };
+
+  // Fetch equipped item durability + rarity (for wear system and multiplier)
   let equippedDurability: number | null = null;
+  let equippedRarity: string | null = null;
   const equippedId = profile.equipped_chupete_id;
 
   if (equippedId) {
     const { data: equippedInv } = await supabase
       .from("inventory")
-      .select("id, durability, max_durability")
+      .select("id, durability, max_durability, item:items(rarity)")
       .eq("id", equippedId)
       .maybeSingle();
 
     if (equippedInv) {
       equippedDurability = equippedInv.durability ?? null;
+      equippedRarity = (equippedInv.item as any)?.rarity ?? null;
     }
   }
+
+  const clickMultiplier = CLICK_MULTIPLIER[equippedRarity ?? ""] ?? 1;
+  const effectiveClicks = clickCount * clickMultiplier;
 
   // Roll for drop: P(at least one drop in N clicks) = 1 - (1 - p)^N
   const dropProbability = 1 - Math.pow(1 - DROP_CHANCE_PER_CLICK, clickCount);
@@ -225,17 +240,26 @@ serve(async (req: Request) => {
     inventoryId = invInsert.id;
   }
 
-  // Update profile with all clicks
-  const newXp = (profile.xp ?? 0) + XP_PER_CLICK * clickCount + rarityBonus;
+  // Update profile: physical clicks for counter, effective clicks for XP
+  const newXp = (profile.xp ?? 0) + XP_PER_CLICK * effectiveClicks + rarityBonus;
   const newClicks = (profile.total_clicks ?? 0) + clickCount;
   const newLevel = calculateLevelFromXp(newXp);
   const oldLevel = profile.level ?? 1;
 
   // Durability: reduce equipped item durability, unequip at 0
+  let chupeteBroke = false;
+  let brokeItemName: string | null = null;
+
   if (equippedId && equippedDurability !== null) {
-    const newDurability = Math.max(0, equippedDurability - clickCount);
+    const newDurability = Math.max(0, equippedDurability - effectiveClicks);
     if (newDurability <= 0) {
-      // Item breaks: remove from equipped and delete
+      const { data: brokeInv } = await supabase
+        .from("inventory")
+        .select("item:items(name)")
+        .eq("id", equippedId)
+        .maybeSingle();
+      brokeItemName = (brokeInv?.item as any)?.name ?? null;
+      chupeteBroke = true;
       await supabase.from("profiles").update({ equipped_chupete_id: null }).eq("id", user.id);
       await supabase.from("inventory").delete().eq("id", equippedId);
     } else {
@@ -271,39 +295,92 @@ serve(async (req: Request) => {
     .update({ total_clicks: newClicks, xp: newXp, level: newLevel, credits: newCredits })
     .eq("id", user.id);
 
-  // Badge checks
+  // Count total drops if a drop happened (for drop milestone badges)
+  let totalDropCount = 0;
+  if (isDropped) {
+    const { count } = await supabase.from("drops").select("id", { count: "exact", head: true }).eq("user_id", user.id);
+    totalDropCount = count ?? 0;
+  }
+
+  // Count legendary+ items for collector badges
+  let legendaryCount = 0, extraterrestreCount = 0, ortCount = 0;
+  if (isDropped && (rarity === "legendario" || rarity === "extraterrestre" || rarity === "en_el_ort")) {
+    const { data: rareCounts } = await supabase.from("inventory")
+      .select("item:items(rarity)")
+      .eq("user_id", user.id);
+    if (rareCounts) {
+      for (const row of rareCounts) {
+        const r = (row.item as any)?.rarity;
+        if (r === "legendario") legendaryCount++;
+        else if (r === "extraterrestre") extraterrestreCount++;
+        else if (r === "en_el_ort") ortCount++;
+      }
+    }
+  }
+
+  // Badge checks (extended)
   const badgesToCheck: { key: string; condition: boolean }[] = [
-    { key: "primer_click",      condition: newClicks >= 1    && profile.total_clicks < 1 },
-    { key: "click_100",         condition: newClicks >= 100  && profile.total_clicks < 100 },
-    { key: "click_1000",        condition: newClicks >= 1000 && profile.total_clicks < 1000 },
-    { key: "click_10000",       condition: newClicks >= 10000 && profile.total_clicks < 10000 },
-    { key: "nivel_5",           condition: newLevel >= 5  && (profile.level ?? 1) < 5 },
-    { key: "nivel_10",          condition: newLevel >= 10 && (profile.level ?? 1) < 10 },
-    { key: "nivel_25",          condition: newLevel >= 25 && (profile.level ?? 1) < 25 },
-    { key: "primer_raro",       condition: isDropped && rarity === "raro" },
-    { key: "primer_legendario", condition: isDropped && rarity === "legendario" },
-    { key: "primer_ort",        condition: isDropped && rarity === "en_el_ort" },
+    // Click milestones
+    { key: "primer_click",          condition: newClicks >= 1       && profile.total_clicks < 1 },
+    { key: "click_100",             condition: newClicks >= 100     && profile.total_clicks < 100 },
+    { key: "click_1000",            condition: newClicks >= 1000    && profile.total_clicks < 1000 },
+    { key: "click_10000",           condition: newClicks >= 10000   && profile.total_clicks < 10000 },
+    { key: "click_50000",           condition: newClicks >= 50000   && profile.total_clicks < 50000 },
+    { key: "click_100000",          condition: newClicks >= 100000  && profile.total_clicks < 100000 },
+    { key: "click_500000",          condition: newClicks >= 500000  && profile.total_clicks < 500000 },
+    { key: "click_1000000",         condition: newClicks >= 1000000 && profile.total_clicks < 1000000 },
+    // Level milestones
+    { key: "nivel_5",               condition: newLevel >= 5   && (profile.level ?? 1) < 5 },
+    { key: "nivel_10",              condition: newLevel >= 10  && (profile.level ?? 1) < 10 },
+    { key: "nivel_25",              condition: newLevel >= 25  && (profile.level ?? 1) < 25 },
+    { key: "nivel_50",              condition: newLevel >= 50  && (profile.level ?? 1) < 50 },
+    { key: "nivel_100",             condition: newLevel >= 100 && (profile.level ?? 1) < 100 },
+    { key: "nivel_200",             condition: newLevel >= 200 && (profile.level ?? 1) < 200 },
+    // First drops by rarity
+    { key: "primer_raro",           condition: isDropped && rarity === "raro" },
+    { key: "primer_legendario",     condition: isDropped && rarity === "legendario" },
+    { key: "primer_extraterrestre", condition: isDropped && rarity === "extraterrestre" },
+    { key: "primer_ort",            condition: isDropped && rarity === "en_el_ort" },
+    // Drop count milestones
+    { key: "drops_10",              condition: isDropped && totalDropCount >= 10 },
+    { key: "drops_100",             condition: isDropped && totalDropCount >= 100 },
+    { key: "drops_500",             condition: isDropped && totalDropCount >= 500 },
+    // Collector badges
+    { key: "colector_legendario",   condition: isDropped && legendaryCount >= 5 },
+    { key: "colector_extraterrestre", condition: isDropped && extraterrestreCount >= 3 },
+    { key: "colector_ort",          condition: isDropped && ortCount >= 2 },
   ];
+
+  const newBadges: { name: string; icon: string }[] = [];
 
   for (const b of badgesToCheck) {
     if (!b.condition) continue;
-    const { data: badge } = await supabase.from("badges").select("id").eq("key", b.key).single();
+    const { data: badge } = await supabase.from("badges").select("id, name, icon_svg").eq("key", b.key).single();
     if (!badge) continue;
     const { data: existing } = await supabase.from("user_badges")
       .select("user_id").eq("user_id", user.id).eq("badge_id", badge.id).maybeSingle();
     if (!existing) {
       await supabase.from("user_badges").insert({ user_id: user.id, badge_id: badge.id });
+      newBadges.push({ name: badge.name, icon: badge.icon_svg ?? "🏆" });
     }
   }
 
+  const baseResponse = {
+    credits_earned: creditsEarned,
+    chupete_broke: chupeteBroke,
+    broke_item_name: brokeItemName,
+    new_badges: newBadges,
+    click_multiplier: clickMultiplier,
+  };
+
   if (!isDropped) {
-    return new Response(JSON.stringify({ dropped: false, credits_earned: creditsEarned }),
+    return new Response(JSON.stringify({ dropped: false, ...baseResponse }),
       { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   }
 
   return new Response(
-    JSON.stringify({ dropped: true, item, float_value: floatValue, rarity, isNewRecord, inventory_id: inventoryId, credits_earned: creditsEarned }),
+    JSON.stringify({ dropped: true, item, float_value: floatValue, rarity, isNewRecord, inventory_id: inventoryId, ...baseResponse }),
     { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
   );
 });

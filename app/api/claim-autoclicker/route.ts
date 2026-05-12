@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
-const MAX_CLAIM_SECONDS = 8 * 3600; // cap at 8h of accumulated clicks
+const MAX_CLAIM_SECONDS = 8 * 3600;
 
 function adminClient() {
   return createSupabaseAdmin(
@@ -10,6 +10,22 @@ function adminClient() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
+}
+
+function xpForNextLevel(level: number): number {
+  if (level <= 100) return 150 + (level - 1) * 50;
+  return Math.floor(5100 * Math.pow(1.08, level - 100));
+}
+
+function calculateLevelFromXp(totalXp: number): number {
+  let level = 1;
+  let remaining = totalXp;
+  while (remaining >= xpForNextLevel(level)) {
+    remaining -= xpForNextLevel(level);
+    level++;
+    if (level > 9999) break;
+  }
+  return level;
 }
 
 export async function POST(_request: NextRequest) {
@@ -36,12 +52,11 @@ export async function POST(_request: NextRequest) {
     const lastClaimed = profile.autoclicker_last_claimed ? new Date(profile.autoclicker_last_claimed) : now;
     const activeUntil = new Date(profile.autoclicker_until);
 
-    // Only count time within active window
     const claimFrom = lastClaimed;
     const claimTo = now < activeUntil ? now : activeUntil;
 
     if (claimTo <= claimFrom) {
-      return NextResponse.json({ clicks: 0, credits: 0, message: "Nada que reclamar." });
+      return NextResponse.json({ clicks: 0, xp_gained: 0, message: "Nada que reclamar." });
     }
 
     const elapsedSeconds = Math.min((claimTo.getTime() - claimFrom.getTime()) / 1000, MAX_CLAIM_SECONDS);
@@ -49,20 +64,23 @@ export async function POST(_request: NextRequest) {
     const clickCount = Math.floor(elapsedSeconds * rate);
 
     if (clickCount < 1) {
-      return NextResponse.json({ clicks: 0, credits: 0, message: "Nada que reclamar aún." });
+      return NextResponse.json({ clicks: 0, xp_gained: 0, message: "Nada que reclamar aún." });
     }
 
     const XP_PER_CLICK = 2;
-    const newXp = (profile.xp ?? 0) + XP_PER_CLICK * clickCount;
+    const xpGained = XP_PER_CLICK * clickCount;
+    const newXp = (profile.xp ?? 0) + xpGained;
     const newClicks = (profile.total_clicks ?? 0) + clickCount;
+    const newLevel = calculateLevelFromXp(newXp);
 
     await admin.from("profiles").update({
       total_clicks: newClicks,
       xp: newXp,
+      level: newLevel,
       autoclicker_last_claimed: now.toISOString(),
     }).eq("id", user.id);
 
-    return NextResponse.json({ success: true, clicks: clickCount, credits: 0 });
+    return NextResponse.json({ success: true, clicks: clickCount, xp_gained: xpGained });
   } catch (err) {
     console.error("claim-autoclicker error:", err);
     return NextResponse.json({ error: "Error interno." }, { status: 500 });

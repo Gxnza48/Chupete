@@ -30,7 +30,7 @@ export default function AutoclickerPanel() {
   const { profile, refetch } = useProfile();
   const [buying, setBuying] = useState<PlanKey | null>(null);
   const [claiming, setClaiming] = useState(false);
-  const [claimed, setClaimed] = useState<{ clicks: number; credits: number } | null>(null);
+  const [claimed, setClaimed] = useState<{ clicks: number; xp_gained: number } | null>(null);
   const [open, setOpen] = useState(false);
   const supabase = createClient();
 
@@ -71,9 +71,9 @@ export default function AutoclickerPanel() {
     const data = await res.json();
     setClaiming(false);
     if (res.ok && data.clicks > 0) {
-      setClaimed({ clicks: data.clicks, credits: data.credits });
+      setClaimed({ clicks: data.clicks, xp_gained: data.xp_gained ?? 0 });
       refetch();
-      setTimeout(() => setClaimed(null), 4000);
+      setTimeout(() => setClaimed(null), 5000);
     }
   }
 
@@ -153,8 +153,11 @@ export default function AutoclickerPanel() {
                     className="px-4 py-2 rounded-xl text-center"
                     style={{ background: "rgba(74,154,74,0.08)", border: "1px solid rgba(74,154,74,0.2)" }}
                   >
-                    <p className="text-xs" style={{ color: "#4a9a4a", fontFamily: "var(--font-jetbrains-mono), monospace" }}>
-                      +{claimed.clicks.toLocaleString("es-AR")} clicks · +{claimed.credits.toLocaleString("es-AR")} cr.
+                    <p className="text-xs font-semibold" style={{ color: "#4a9a4a", fontFamily: "var(--font-jetbrains-mono), monospace" }}>
+                      +{claimed.clicks.toLocaleString("es-AR")} clicks
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: "#4a9a4a", fontFamily: "var(--font-jetbrains-mono), monospace" }}>
+                      +{claimed.xp_gained.toLocaleString("es-AR")} XP
                     </p>
                   </motion.div>
                 )}

@@ -14,6 +14,7 @@ export function useClicker() {
   const [localClicks, setLocalClicks] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [xpParticles, setXpParticles] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [itemBroke, setItemBroke] = useState(false);
   const pendingClicksRef = useRef(0);
   const particleId = useRef(0);
   const prevLevelRef = useRef<number | null>(null);
@@ -62,11 +63,27 @@ export function useClicker() {
 
       if (error || !data) return;
 
-      const result = data as { dropped: boolean } & Partial<DropResult>;
+      const result = data as {
+        dropped: boolean;
+        chupete_broke?: boolean;
+        broke_item_name?: string;
+        new_badges?: { name: string; icon: string }[];
+      } & Partial<DropResult>;
+
       if (result.dropped && result.item) {
         const drop = data as DropResult;
         setLastDrop(drop);
         addToast({ variant: "drop", drop });
+      }
+      if (result.chupete_broke) {
+        setItemBroke(true);
+        addToast({ variant: "broke", message: result.broke_item_name ?? undefined });
+        setTimeout(() => setItemBroke(false), 300);
+      }
+      if (result.new_badges?.length) {
+        for (const badge of result.new_badges) {
+          addToast({ variant: "badge", message: `${badge.icon}|${badge.name}` });
+        }
       }
 
       const { data: profile } = await supabase
@@ -111,5 +128,6 @@ export function useClicker() {
     lastDrop,
     localClicks,
     xpParticles,
+    itemBroke,
   };
 }

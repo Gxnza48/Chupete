@@ -139,11 +139,13 @@ function ClickerContent() {
   const [equippedItem, setEquippedItem] = useState<EquippedItem | null>(null);
   const [localDurability, setLocalDurability] = useState<number | null>(null);
   const [sparks, setSparks] = useState<Spark[]>([]);
+  const [isHot, setIsHot] = useState(false);
   const sparkId = useRef(0);
   const bonusXpPending = useRef(0);
+  const clickTimestamps = useRef<number[]>([]);
   const supabase = createClient();
 
-  const { handleClick, isAnimating, lastDrop, localClicks, xpParticles } = useClickerContext();
+  const { handleClick, isAnimating, lastDrop, localClicks, xpParticles, itemBroke } = useClickerContext();
   const { profile } = useProfile();
 
   useEffect(() => {
@@ -197,11 +199,25 @@ function ClickerContent() {
     fetchEquipped();
   }, [profile?.equipped_chupete_id, supabase]);
 
-  // Optimistically reduce local durability on each click sync (100 clicks per batch max)
+  // Clear equipped item display when it breaks
   useEffect(() => {
-    if (localDurability === null || !equippedItem?.max_durability) return;
-    if (localDurability <= 0) return;
-  }, [localDurability, equippedItem]);
+    if (itemBroke) {
+      setEquippedItem(null);
+      setLocalDurability(null);
+    }
+  }, [itemBroke]);
+
+  // Racha: track click speed and update hot state
+  useEffect(() => {
+    const HOT_WINDOW_MS = 30000; // 30 seconds
+    const HOT_THRESHOLD = 120;   // 120 clicks in that window
+    const interval = setInterval(() => {
+      const now = Date.now();
+      clickTimestamps.current = clickTimestamps.current.filter(t => now - t < HOT_WINDOW_MS);
+      setIsHot(clickTimestamps.current.length >= HOT_THRESHOLD);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, []);
 
   // Bonus XP flush
   useEffect(() => {
@@ -255,6 +271,9 @@ function ClickerContent() {
     if (!isAuthenticated) return;
     setPulseKey((k) => k + 1);
     playClick();
+
+    // Track for racha system
+    clickTimestamps.current.push(Date.now());
 
     if (isLegendaryPlus && Math.random() < 0.15) bonusXpPending.current += 13;
 
@@ -371,6 +390,32 @@ function ClickerContent() {
               }}
             />
           </motion.div>
+
+          {/* Racha caliente overlay */}
+          <AnimatePresence>
+            {isHot && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl pointer-events-none z-10"
+                style={{ background: "radial-gradient(circle, rgba(255,80,0,0.18) 0%, transparent 70%)" }}
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 0.8, repeat: Infinity }}
+                  className="text-center px-3"
+                >
+                  <p className="text-xl font-black" style={{ color: "#ff5500", textShadow: "0 0 12px #ff550080", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
+                    ¡Te chupetiaste! 🔥
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: "#ff8844", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
+                    Seguí así 🔥🔥
+                  </p>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Unauthenticated overlay */}
           {!isAuthenticated && (

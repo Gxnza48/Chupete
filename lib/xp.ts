@@ -1,6 +1,7 @@
 export function xpForNextLevel(level: number): number {
-  // Scaling formula: 150, 200, 250, 300, 350...
-  return 150 + (level - 1) * 50;
+  if (level <= 100) return 150 + (level - 1) * 50;
+  // Exponential growth past level 100
+  return Math.floor(5100 * Math.pow(1.08, level - 100));
 }
 
 export function calculateLevel(totalXp: number): {
@@ -10,12 +11,13 @@ export function calculateLevel(totalXp: number): {
 } {
   let level = 1;
   let remaining = totalXp;
-  
-  while (remaining >= xpForNextLevel(level) && level < 100) {
+
+  while (remaining >= xpForNextLevel(level)) {
     remaining -= xpForNextLevel(level);
     level++;
+    if (level > 9999) break;
   }
-  
+
   return { level, xpInLevel: remaining, xpNeeded: xpForNextLevel(level) };
 }
 

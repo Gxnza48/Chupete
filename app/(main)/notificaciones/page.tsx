@@ -34,9 +34,11 @@ function rarityColor(rarity?: RarityKey): string {
 }
 
 export default function NotificacionesPage() {
+  const PAGE_SIZE = 10;
   const [entries, setEntries] = useState<NotifEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "sold" | "bought" | "case">("all");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     async function load() {
@@ -101,6 +103,8 @@ export default function NotificacionesPage() {
   const filtered = filter === "all" ? entries : entries.filter((e) =>
     filter === "case" ? (e.type === "case" || e.type === "credit") : e.type === filter
   );
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -114,7 +118,7 @@ export default function NotificacionesPage() {
       {/* Filter tabs */}
       <div className="flex gap-2 mb-6 flex-wrap overflow-x-auto pb-1">
         {(["all", "sold", "bought", "case"] as const).map((f) => (
-          <button key={f} onClick={() => setFilter(f)}
+          <button key={f} onClick={() => { setFilter(f); setVisibleCount(PAGE_SIZE); }}
             className="px-4 py-1.5 rounded-full text-xs font-semibold transition-all"
             style={{
               background: filter === f ? "#efefef" : "rgba(255,255,255,0.04)",
@@ -136,35 +140,56 @@ export default function NotificacionesPage() {
           <p className="text-sm" style={{ color: "#404040" }}>Sin actividad todavía</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {filtered.map((entry, i) => {
-            const color = rarityColor(entry.rarity);
-            return (
-              <motion.div key={entry.id}
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.02 }}
-                className="flex items-center gap-4 px-4 py-3.5 rounded-xl"
-                style={{ background: "#060606", border: `1px solid ${entry.rarity ? color + "20" : "rgba(255,255,255,0.05)"}` }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                  style={{ background: entry.rarity ? color + "15" : "rgba(255,255,255,0.05)", color: entry.amountSign === "+" ? "#4a9a4a" : "#ff6b6b" }}>
-                  {entry.type === "sold" ? "↑" : entry.type === "bought" ? "↓" : entry.type === "case" ? "⊡" : "◎"}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: "#efefef", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
-                    {entry.title}
-                  </p>
-                  <p className="text-xs truncate" style={{ color: "#404040" }}>{entry.subtitle}</p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-bold" style={{ color: entry.amountSign === "+" ? "#4a9a4a" : "#ff6b6b", fontFamily: "var(--font-jetbrains-mono), monospace" }}>
-                    {entry.amountSign}{formatNum(entry.amount)} cr.
-                  </p>
-                  <p className="text-[10px]" style={{ color: "#2a2a2a" }}>{timeAgo(entry.date)}</p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+        <>
+          <div className="flex flex-col gap-2">
+            {visible.map((entry, i) => {
+              const color = rarityColor(entry.rarity);
+              return (
+                <motion.div key={entry.id}
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i, 5) * 0.04 }}
+                  className="flex items-center gap-4 px-4 py-3.5 rounded-xl"
+                  style={{ background: "#060606", border: `1px solid ${entry.rarity ? color + "20" : "rgba(255,255,255,0.05)"}` }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold"
+                    style={{ background: entry.rarity ? color + "15" : "rgba(255,255,255,0.05)", color: entry.amountSign === "+" ? "#4a9a4a" : "#ff6b6b" }}>
+                    {entry.type === "sold" ? "↑" : entry.type === "bought" ? "↓" : entry.type === "case" ? "⊡" : "◎"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: "#efefef", fontFamily: "var(--font-syne), Syne, sans-serif" }}>
+                      {entry.title}
+                    </p>
+                    <p className="text-xs truncate" style={{ color: "#404040" }}>{entry.subtitle}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-bold" style={{ color: entry.amountSign === "+" ? "#4a9a4a" : "#ff6b6b", fontFamily: "var(--font-jetbrains-mono), monospace" }}>
+                      {entry.amountSign}{formatNum(entry.amount)} cr.
+                    </p>
+                    <p className="text-[10px]" style={{ color: "#2a2a2a" }}>{timeAgo(entry.date)}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {hasMore && (
+            <button
+              onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+              className="w-full mt-4 py-2.5 rounded-xl text-xs font-semibold transition-all"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.07)",
+                color: "#404040",
+                fontFamily: "var(--font-syne), Syne, sans-serif",
+              }}
+            >
+              Ver más ({filtered.length - visibleCount} restantes)
+            </button>
+          )}
+
+          <p className="text-center text-[10px] mt-2" style={{ color: "#2a2a2a" }}>
+            {Math.min(visibleCount, filtered.length)} de {filtered.length}
+          </p>
+        </>
       )}
     </div>
   );

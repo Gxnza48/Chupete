@@ -9,14 +9,14 @@ import {
   useRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, AlertTriangle } from "lucide-react";
+import { TrendingUp, AlertTriangle, Zap } from "lucide-react";
 import type { DropResult } from "@/types/database";
 import { getConditionLabel, RARITIES } from "@/lib/rarities";
 import type { RarityKey } from "@/lib/rarities";
 import RarityText from "./RarityText";
 import Image from "next/image";
 
-export type ToastVariant = "default" | "drop" | "levelup" | "error";
+export type ToastVariant = "default" | "drop" | "levelup" | "error" | "broke" | "badge";
 
 export interface ToastData {
   id: string;
@@ -182,6 +182,37 @@ function ToastItem({
           <p className="text-sm" style={{ color: "#ff6b6b" }}>
             {toast.message}
           </p>
+        </div>
+      )}
+      {toast.variant === "badge" && (
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-2xl"
+            style={{ background: "rgba(255,170,0,0.12)", border: "1px solid rgba(255,170,0,0.3)" }}>
+            {toast.message?.split("|")[0] ?? "🏆"}
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-widest mb-0.5" style={{ color: "#ffaa00" }}>
+              ¡Logro desbloqueado!
+            </p>
+            <p className="font-bold text-sm" style={{ color: "#efefef" }}>
+              {toast.message?.split("|")[1] ?? "Badge obtenido"}
+            </p>
+          </div>
+        </div>
+      )}
+      {toast.variant === "broke" && (
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "rgba(255,68,68,0.1)", border: "1px solid rgba(255,68,68,0.25)" }}>
+            <Zap size={18} style={{ color: "#ff4444" }} />
+          </div>
+          <div>
+            <p className="font-bold text-sm" style={{ color: "#ff4444" }}>
+              {toast.message ? `¡${toast.message} se rompió!` : "¡Tu chupete se rompió!"}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "#404040" }}>
+              Ya no está equipado.
+            </p>
+          </div>
         </div>
       )}
     </motion.div>

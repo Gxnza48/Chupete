@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, LogOut } from "lucide-react";
 import type { Profile, ProfileCosmetic, ShopItem } from "@/types/database";
 import { calculateLevel, levelProgress } from "@/lib/xp";
 import EditUsernameModal from "./EditUsernameModal";
@@ -57,6 +58,13 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
   const [equippedCharms, setEquippedCharms] = useState<(ProfileCosmetic & { shop_item?: ShopItem })[]>([]);
   const [equippedFrame, setEquippedFrame] = useState<string | null>(null);
   const supabase = createClient();
+  const router = useRouter();
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    router.push("/auth");
+    router.refresh();
+  }
   const { level, xpInLevel, xpNeeded } = calculateLevel(profile.xp);
   const progress = levelProgress(profile.xp);
 
@@ -207,6 +215,15 @@ export default function ProfileHeader({ profile, itemCount = 0, isOwner = false 
             <ShoppingBag size={13} /> Tienda de perfil
           </button>
           <ProfileCustomizer profile={profile} />
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center justify-center gap-2 mt-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+            style={{ background: "rgba(255,50,50,0.06)", border: "1px solid rgba(255,50,50,0.15)", color: "#ff4444", fontFamily: "var(--font-syne), Syne, sans-serif" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,50,50,0.12)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,50,50,0.06)"; }}
+          >
+            <LogOut size={13} /> Cerrar sesión
+          </button>
         </div>
       )}
 
