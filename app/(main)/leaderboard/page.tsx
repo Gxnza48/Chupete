@@ -67,20 +67,18 @@ function LeaderAvatar({
   level: number;
   cosmetics: UserCosmetics;
 }) {
-  const hasFrame = !!cosmetics.frame;
-
-  // Frame overrides level border
-  const frameStyle  = hasFrame ? (FRAME_STYLES[cosmetics.frame!] ?? {})  : getLevelBorderStyle(level);
-  const frameClass  = hasFrame ? (FRAME_CLASSES[cosmetics.frame!] ?? "")  : getLevelFrameClass(level);
-  const badgeStyle  = getLevelBadgeStyle(level);
-  const firstCharm  = cosmetics.charms[0] ?? null;
+  const hasFrame   = !!cosmetics.frame;
+  const frameStyle = hasFrame ? (FRAME_STYLES[cosmetics.frame!] ?? {}) : getLevelBorderStyle(level);
+  const frameClass = hasFrame ? (FRAME_CLASSES[cosmetics.frame!] ?? "") : getLevelFrameClass(level);
+  const badgeStyle = getLevelBadgeStyle(level);
+  const firstCharm = cosmetics.charms[0] ?? null;
 
   return (
     <div className="relative flex-shrink-0">
-      {/* Avatar */}
+      {/* Avatar container — overflow-hidden clips the image cleanly */}
       <div
         className={`w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center${frameClass ? ` ${frameClass}` : ""}`}
-        style={{ background: "#0a0a0a", ...frameStyle }}
+        style={{ background: "#0a0a0a" }}
       >
         {avatar_url ? (
           <Image src={avatar_url} alt={username} width={40} height={40} className="object-cover w-full h-full" />
@@ -90,6 +88,14 @@ function LeaderAvatar({
           </span>
         )}
       </div>
+
+      {/* Frame border overlay — separate element so it always renders above the image */}
+      {(frameStyle.border || frameStyle.boxShadow) && (
+        <div
+          className="absolute inset-0 rounded-xl pointer-events-none"
+          style={frameStyle}
+        />
+      )}
 
       {/* Level badge */}
       <div
@@ -119,11 +125,11 @@ const TAB_LABELS: Record<string, string> = {
   traders:    "Top Traders",
 };
 
-function medal(rank: number) {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
-  return null;
+function rankColor(rank: number): string {
+  if (rank === 1) return "#ffaa00";
+  if (rank === 2) return "#a0a0a0";
+  if (rank === 3) return "#c8762a";
+  return "#2a2a2a";
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -226,14 +232,14 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
 
         {entries.map((entry, idx) => {
           const rank  = idx + 1;
-          const med   = medal(rank);
           const value = entry[metricKey] as number ?? 0;
           const cosmetics = cosmeticsByUser[entry.user_id] ?? { frame: null, charms: [] };
+          const color = rankColor(rank);
 
           const rankBorderColor =
-            rank === 1 ? "rgba(255,215,0,0.25)"
-            : rank === 2 ? "rgba(192,192,192,0.2)"
-            : rank === 3 ? "rgba(205,127,50,0.2)"
+            rank === 1 ? "rgba(255,170,0,0.2)"
+            : rank === 2 ? "rgba(160,160,160,0.15)"
+            : rank === 3 ? "rgba(200,118,42,0.15)"
             : "rgba(255,255,255,0.04)";
 
           return (
@@ -249,12 +255,10 @@ export default async function LeaderboardPage({ searchParams }: LeaderboardPageP
             >
               {/* Rank */}
               <div
-                className="w-8 text-center flex-shrink-0"
-                style={{ fontFamily: "var(--font-jetbrains-mono), monospace" }}
+                className="w-8 text-center flex-shrink-0 font-bold text-sm"
+                style={{ fontFamily: "var(--font-jetbrains-mono), monospace", color }}
               >
-                {med
-                  ? <span className="text-lg">{med}</span>
-                  : <span className="text-xs" style={{ color: "#2a2a2a" }}>#{rank}</span>}
+                #{rank}
               </div>
 
               {/* Avatar with frame + charm + level badge */}

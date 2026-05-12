@@ -149,26 +149,38 @@ function ClickerContent() {
   useEffect(() => {
     async function fetchEquipped() {
       if (!profile?.equipped_chupete_id) { setEquippedItem(null); setLocalDurability(null); return; }
+
+      // Always fetch basic item info
       const { data } = await supabase
         .from("inventory")
-        .select("id, durability, max_durability, item:items(name, image_url, rarity)")
+        .select("id, item:items(name, image_url, rarity)")
         .eq("id", profile.equipped_chupete_id)
-        .single();
-      if (data?.item) {
-        const item = data.item as unknown as { name: string; image_url: string; rarity: string };
-        setEquippedItem({
-          id: data.id,
-          image_url: item.image_url,
-          name: item.name,
-          rarity: item.rarity as RarityKey,
-          durability: data.durability ?? null,
-          max_durability: data.max_durability ?? null,
-        });
-        setLocalDurability(data.durability ?? null);
-      } else {
-        setEquippedItem(null);
-        setLocalDurability(null);
-      }
+        .maybeSingle();
+
+      if (!data?.item) { setEquippedItem(null); setLocalDurability(null); return; }
+
+      const item = data.item as unknown as { name: string; image_url: string; rarity: string };
+      setEquippedItem({
+        id: data.id,
+        image_url: item.image_url,
+        name: item.name,
+        rarity: item.rarity as RarityKey,
+        durability: null,
+        max_durability: null,
+      });
+
+      // Try to fetch durability separately (requires migration 007)
+      try {
+        const { data: dur } = await supabase
+          .from("inventory")
+          .select("durability, max_durability")
+          .eq("id", profile.equipped_chupete_id)
+          .maybeSingle();
+        if (dur?.max_durability) {
+          setEquippedItem((prev) => prev ? { ...prev, durability: dur.durability, max_durability: dur.max_durability } : prev);
+          setLocalDurability(dur.durability ?? null);
+        }
+      } catch {}
     }
     fetchEquipped();
   }, [profile?.equipped_chupete_id, supabase]);

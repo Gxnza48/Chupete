@@ -10,7 +10,7 @@ import type { RarityKey } from "@/lib/rarities";
 import { rollRarity, RARITY_COLOR, type CaseRarityEntry } from "@/lib/cases";
 import RarityText from "@/components/ui/RarityText";
 import { useToast } from "@/components/ui/Toast";
-import { playCaseOpenSpin, playCaseResult } from "@/lib/sounds";
+import { startSpinTick, playCaseResult } from "@/lib/sounds";
 
 const CARD_W = typeof window !== "undefined" && window.innerWidth < 480 ? 110 : 148;
 const CARD_GAP = 8;
@@ -234,6 +234,8 @@ export default function CaseOpenModal({ result, caseRarities, itemsByRarity, onC
   const { addToast } = useToast();
   const toastedResult = useRef<string | null>(null);
 
+  const stopTickRef = useRef<(() => void) | null>(null);
+
   const runStrip = useCallback((res: CaseResult) => {
     const newStrip = buildStrip(res, caseRarities, itemsByRarity);
     setStrip(newStrip);
@@ -241,7 +243,7 @@ export default function CaseOpenModal({ result, caseRarities, itemsByRarity, onC
     setEffectActive(false);
     stripX.set(0);
     setPhase("spinning");
-    playCaseOpenSpin();
+    stopTickRef.current = startSpinTick(4500);
 
     requestAnimationFrame(() => {
       const containerW = containerRef.current?.clientWidth ?? 600;
@@ -252,6 +254,7 @@ export default function CaseOpenModal({ result, caseRarities, itemsByRarity, onC
         duration: 4.8,
         ease: [0.12, 0.005, 0.055, 1.0],
         onComplete: () => {
+          stopTickRef.current?.();
           setPhase("result");
           setEffectActive(true);
           const rarity = newStrip[WINNER_IDX]?.rarity ?? "comun";
@@ -346,18 +349,18 @@ export default function CaseOpenModal({ result, caseRarities, itemsByRarity, onC
           <div className="absolute left-0 top-0 bottom-0 z-10 pointer-events-none" style={{ width: 80, background: "linear-gradient(to right, #000000, transparent)" }} />
           <div className="absolute right-0 top-0 bottom-0 z-10 pointer-events-none" style={{ width: 80, background: "linear-gradient(to left, #000000, transparent)" }} />
 
-          {/* Effect layer (particles/rings centered on strip center) */}
-          <div className="absolute inset-0 z-30 pointer-events-none overflow-visible flex items-center justify-center">
-            <Particles count={fx.particles} color={winnerColor} active={effectActive} />
-            <Rings count={fx.rings} color={winnerColor} active={effectActive} />
-            <LightningBolts count={fx.lightningBolts} color={winnerColor} active={effectActive} />
-          </div>
-
           <div ref={containerRef} className="overflow-hidden" style={{ borderRadius: 14 }}>
             <motion.div className="flex" style={{ x: stripX, gap: CARD_GAP }}>
               {strip.map((card, i) => <StripCardEl key={i} card={card} phase={phase} />)}
             </motion.div>
           </div>
+        </div>
+
+        {/* Effects — fixed at viewport center, outside any overflow:hidden */}
+        <div className="fixed inset-0 pointer-events-none z-[55] flex items-center justify-center">
+          <Particles count={fx.particles} color={winnerColor} active={effectActive} />
+          <Rings count={fx.rings} color={winnerColor} active={effectActive} />
+          <LightningBolts count={fx.lightningBolts} color={winnerColor} active={effectActive} />
         </div>
 
         {/* Result info */}

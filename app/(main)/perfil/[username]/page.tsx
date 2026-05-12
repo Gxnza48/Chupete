@@ -7,6 +7,7 @@ import BadgeRow from "@/components/profile/BadgeRow";
 import PublicInventoryGrid from "@/components/profile/PublicInventoryGrid";
 import ProfileParticlesWrapper from "@/components/profile/ProfileParticlesWrapper";
 import type { Profile, InventoryItem, UserBadge } from "@/types/database";
+import { RARITIES, type RarityKey } from "@/lib/rarities";
 
 interface ProfilePageProps {
   params: Promise<{ username: string }>;
@@ -44,7 +45,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     .eq("show_in_profile", true)
     .order("obtained_at", { ascending: false });
 
-  const inventoryItems = (inventoryData ?? []) as InventoryItem[];
+  const inventoryItems = ((inventoryData ?? []) as InventoryItem[])
+    .sort((a, b) => {
+      const aOrder = RARITIES[a.item?.rarity as RarityKey]?.order ?? 0;
+      const bOrder = RARITIES[b.item?.rarity as RarityKey]?.order ?? 0;
+      return bOrder - aOrder;
+    });
 
   // Fetch badges
   const { data: badgesData } = await supabase

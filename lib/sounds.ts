@@ -76,6 +76,37 @@ export function playUpgradeSpin() {
   sweep(200, 1000, 0.3, "sine", 0.15);
 }
 
+// Progressive spin tick — starts fast, slows down over `durationMs`.
+// Returns a stop function.
+export function startSpinTick(durationMs: number): () => void {
+  let stopped = false;
+  let interval = 55; // ms — starts fast
+  const maxInterval = 600; // ms — ends slow
+  const startTime = Date.now();
+
+  function tick() {
+    if (stopped || Date.now() - startTime > durationMs + 500) return;
+    const c = ac();
+    if (c) {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.connect(g);
+      g.connect(c.destination);
+      o.type = "triangle";
+      o.frequency.setValueAtTime(180 + Math.random() * 40, c.currentTime);
+      g.gain.setValueAtTime(0.12, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.035);
+      o.start(c.currentTime);
+      o.stop(c.currentTime + 0.04);
+    }
+    interval = Math.min(maxInterval, interval * 1.075);
+    setTimeout(tick, interval);
+  }
+
+  tick();
+  return () => { stopped = true; };
+}
+
 export function playCraftSuccess() {
   playUpgradeWin();
 }

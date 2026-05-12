@@ -6,6 +6,9 @@ import Image from "next/image";
 import { X } from "lucide-react";
 import { useInventory } from "@/hooks/useInventory";
 import { useProfile } from "@/hooks/useProfile";
+import { useToast } from "@/components/ui/Toast";
+import { playCraftSuccess, playCraftFail } from "@/lib/sounds";
+import type { RarityType } from "@/types/database";
 import { RARITIES, type RarityKey } from "@/lib/rarities";
 import { getCraftOutcome } from "@/lib/craft";
 import RarityText from "@/components/ui/RarityText";
@@ -15,7 +18,7 @@ type CraftResult = {
   success: boolean;
   result_rarity: RarityKey;
   total_value: number;
-  item: { name: string; rarity: string; image_url: string; float_value: number };
+  item: { name: string; rarity: string; image_url: string; float_value: number; inventory_id?: string };
 };
 
 function getRarityColor(rarity: RarityKey): string {
@@ -26,6 +29,7 @@ function getRarityColor(rarity: RarityKey): string {
 export default function CrafteoPage() {
   const { items, isLoading, refetch } = useInventory();
   const { refetch: refetchProfile } = useProfile();
+  const { addToast } = useToast();
   const [selected, setSelected] = useState<InventoryItem[]>([]);
   const [crafting, setCrafting] = useState(false);
   const [result, setResult] = useState<CraftResult | null>(null);
@@ -61,6 +65,29 @@ export default function CrafteoPage() {
       setCrafting(false);
       setResult(data);
       setSelected([]);
+      if (data.success && data.item) {
+        playCraftSuccess();
+        addToast({
+          variant: "drop",
+          drop: {
+            item: {
+              id: "",
+              name: data.item.name,
+              rarity: data.item.rarity as RarityType,
+              description: null,
+              image_url: data.item.image_url,
+              base_price_ars: 0,
+              created_at: "",
+            },
+            float_value: data.item.float_value,
+            rarity: data.item.rarity as RarityType,
+            isNewRecord: false,
+            inventory_id: data.item.inventory_id ?? "",
+          },
+        });
+      } else {
+        playCraftFail();
+      }
       refetch();
       refetchProfile();
     }, 1500);

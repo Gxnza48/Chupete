@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useInventory } from "@/hooks/useInventory";
 import { useProfile } from "@/hooks/useProfile";
 import { RARITIES, type RarityKey, getConditionLabel } from "@/lib/rarities";
 import { RARITY_RANK, getUpgradeOdds, getUpgradeOddsPct, getRarityColor, getWheelTarget } from "@/lib/upgrade";
-import { playUpgradeSpin, playUpgradeWin, playUpgradeLose } from "@/lib/sounds";
+import { startSpinTick, playUpgradeWin, playUpgradeLose } from "@/lib/sounds";
+import { useToast } from "@/components/ui/Toast";
+import type { RarityType } from "@/types/database";
 import RarityText from "@/components/ui/RarityText";
 import type { InventoryItem } from "@/types/database";
 
@@ -122,13 +124,15 @@ function ItemMini({ inv, selected, onClick }: { inv: InventoryItem; selected: bo
 type UpgradeResult = {
   success: boolean;
   target_rarity: RarityKey;
-  item?: { name: string; rarity: string; image_url: string; float_value: number };
+  item?: { name: string; rarity: string; image_url: string; float_value: number; inventory_id?: string };
 };
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function UpgradePage() {
   const { items, isLoading, refetch } = useInventory();
   const { refetch: refetchProfile } = useProfile();
+  const { addToast } = useToast();
+  const stopTickRef = useRef<(() => void) | null>(null);
 
   const [selected, setSelected]       = useState<InventoryItem | null>(null);
   const [targetRarity, setTarget]     = useState<RarityKey | null>(null);
@@ -159,13 +163,38 @@ export default function UpgradePage() {
     });
     const data = await res.json() as UpgradeResult;
 
-    playUpgradeSpin();
+    stopTickRef.current = startSpinTick(5000);
     const target = getWheelTarget(wheelAngle, odds, data.success);
     setWheelAngle(target);
     setResult(data);
 
     setTimeout(() => {
-      if (data.success) playUpgradeWin(); else playUpgradeLose();
+      stopTickRef.current?.();
+      if (data.success) {
+        playUpgradeWin();
+        if (data.item) {
+          addToast({
+            variant: "drop",
+            drop: {
+              item: {
+                id: "",
+                name: data.item.name,
+                rarity: data.item.rarity as RarityType,
+                description: null,
+                image_url: data.item.image_url,
+                base_price_ars: 0,
+                created_at: "",
+              },
+              float_value: data.item.float_value,
+              rarity: data.item.rarity as RarityType,
+              isNewRecord: false,
+              inventory_id: data.item.inventory_id ?? "",
+            },
+          });
+        }
+      } else {
+        playUpgradeLose();
+      }
       setShowResult(true);
       setSpinning(false);
       setSelected(null);
